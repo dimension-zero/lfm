@@ -3,20 +3,10 @@ using Lfm.Core.Services;
 using Lfm.Core.Services.Cache;
 using Lfm.McpServer.Services;
 using Lfm.McpServer.Tools;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-
-// Load configuration
-var config = LfmConfig.Load();
-if (string.IsNullOrEmpty(config.ApiKey) || string.IsNullOrEmpty(config.Username))
-{
-    Console.Error.WriteLine("Error: Last.fm API key and username must be configured");
-    Console.Error.WriteLine("Run: lfm config set-api-key <key>");
-    Console.Error.WriteLine("Run: lfm config set-username <username>");
-    return 1;
-}
+using ModelContextProtocol.Server;
 
 var builder = Host.CreateDefaultBuilder(args)
     .ConfigureServices((context, services) =>
@@ -24,35 +14,38 @@ var builder = Host.CreateDefaultBuilder(args)
         // Register HTTP client
         services.AddHttpClient();
 
-        // Register cache storage
-        services.AddSingleton<IFileCacheStorage, FileCacheStorage>();
+        // Register configuration manager
+        services.AddSingleton<IConfigurationManager, ConfigurationManager>();
+        services.AddSingleton<ICacheDirectoryHelper, CacheDirectoryHelper>();
 
-        // Register Last.fm API client with caching
-        services.AddSingleton<ILastFmApiClient>(provider =>
+        // Register cache services
+        services.AddSingleton<ICacheStorage, FileCacheStorage>();
+        services.AddSingleton<ICacheKeyGenerator, CacheKeyGenerator>();
+
+        // Register the actual LastFm API client
+        services.AddSingleton<LastFmApiClient>(serviceProvider =>
         {
-            var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-            var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
-            var cacheStorage = provider.GetRequiredService<IFileCacheStorage>();
-
+            var httpClientFactory = serviceProvider.GetRequiredService<IHttpClientFactory>();
             var httpClient = httpClientFactory.CreateClient();
-            var apiLogger = loggerFactory.CreateLogger<LastFmApiClient>();
-            var cacheLogger = loggerFactory.CreateLogger<CachedLastFmApiClient>();
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "lfm-mcp/1.0");
 
-            var innerClient = new LastFmApiClient(
-                httpClient,
-                apiLogger,
-                config.ApiKey,
-                config.ApiThrottleMs,
-                config.EnableDebugLogging
-            );
+            var logger = serviceProvider.GetRequiredService<ILogger<LastFmApiClient>>();
+            var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
+            var config = configManager.LoadAsync().GetAwaiter().GetResult();
 
-            return new CachedLastFmApiClient(
-                innerClient,
-                cacheStorage,
-                cacheLogger,
-                config.CacheBehavior,
-                config.CacheDurationMinutes
-            );
+            return new LastFmApiClient(httpClient, logger, config.ApiKey, config.ApiThrottleMs);
+        });
+
+        // Register the cached wrapper as the main interface
+        services.AddSingleton<ILastFmApiClient>(serviceProvider =>
+        {
+            var innerClient = serviceProvider.GetRequiredService<LastFmApiClient>();
+            var cacheStorage = serviceProvider.GetRequiredService<ICacheStorage>();
+            var keyGenerator = serviceProvider.GetRequiredService<ICacheKeyGenerator>();
+            var logger = serviceProvider.GetRequiredService<ILogger<CachedLastFmApiClient>>();
+            var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
+
+            return new CachedLastFmApiClient(innerClient, cacheStorage, keyGenerator, logger, configManager, 10);
         });
 
         // Register MCP client wrapper
@@ -80,9 +73,19 @@ var host = builder.Build();
 // Initialize the tools with dependencies before starting the server
 var loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
 var mcpClient = host.Services.GetRequiredService<LastFmMcpClient>();
+var configManager = host.Services.GetRequiredService<IConfigurationManager>();
+var config = await configManager.LoadAsync();
 var logger = loggerFactory.CreateLogger("LastFmTools");
 
-LastFmTools.Initialize(mcpClient, logger, config.Username);
+if (string.IsNullOrEmpty(config.ApiKey) || string.IsNullOrEmpty(config.DefaultUsername))
+{
+    Console.Error.WriteLine("Error: Last.fm API key and username must be configured");
+    Console.Error.WriteLine("Run: lfm config set-api-key <key>");
+    Console.Error.WriteLine("Run: lfm config set-username <username>");
+    return 1;
+}
+
+LastFmTools.Initialize(mcpClient, logger, config.DefaultUsername);
 
 await host.RunAsync();
 

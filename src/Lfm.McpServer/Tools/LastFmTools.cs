@@ -1,8 +1,8 @@
 using System.ComponentModel;
 using System.Text.Json;
 using Lfm.McpServer.Services;
-using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
 
 namespace Lfm.McpServer.Tools;
 
