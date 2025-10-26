@@ -1,0 +1,78 @@
+{
+  "apiName": "Last.fm",
+  "apiBaseUrl": "https://ws.audioscrobbler.com/2.0/",
+  "mode": "Hybrid",
+  "createdAt": "2025-01-26T00:00:00Z",
+  "lastModifiedAt": "2025-01-26T00:00:00Z",
+  "propertyFlattening": {
+    "Track.Artist.Name": {
+      "sourcePath": "Track.Artist.Name",
+      "targetName": "artist",
+      "includeInConversation": true,
+      "description": "Flatten track's artist name for conversational output (from lfm MCP server compact functions)"
+    },
+    "Track.Album.Name": {
+      "sourcePath": "Track.Album.Name",
+      "targetName": "album",
+      "includeInConversation": true,
+      "description": "Flatten track's album name for conversational output"
+    },
+    "Album.Artist.Name": {
+      "sourcePath": "Album.Artist.Name",
+      "targetName": "artist",
+      "includeInConversation": true,
+      "description": "Flatten album's artist name for conversational output"
+    }
+  },
+  "tokenOptimizationExcludes": [
+    "Url",
+    "Mbid",
+    "Image",
+    "Streamable"
+  ],
+  "equivalenceGroups": {
+    "Beatles": [
+      "The Beatles",
+      "Beatles, The",
+      "beatles",
+      "the beatles"
+    ],
+    "Mozart": [
+      "W.A. Mozart",
+      "Wolfgang Amadeus Mozart",
+      "W. A. Mozart",
+      "mozart"
+    ],
+    "Pink Floyd": [
+      "pink floyd",
+      "Pink floyd",
+      "PINK FLOYD"
+    ]
+  },
+  "navigationInlining": {
+    "Artist": {
+      "navigationProperty": "Artist",
+      "inlineProperties": [
+        "Name"
+      ],
+      "format": "{Name}",
+      "description": "Inline artist name directly (current lfm pattern: track.artist?.name || track.artist)"
+    },
+    "Album": {
+      "navigationProperty": "Album",
+      "inlineProperties": [
+        "Name"
+      ],
+      "format": "{Name}",
+      "description": "Inline album name directly"
+    }
+  },
+  "annotations": {
+    "tokenReduction": "50% reduction achieved in current lfm MCP server (server.js lines 141-165)",
+    "caseInsensitiveMatching": "Uses StringComparer.OrdinalIgnoreCase in current lfm (LastFmApiClient.cs line 479)",
+    "stringBasedNumbers": "PlayCount and Rank stored as strings to preserve API fidelity",
+    "mcpToolCount": 28,
+    "currentImplementation": "lfm-mcp-release/server.js",
+    "conversionGoal": "Achieve functional equivalence with generated C# MCP server"
+  }
+}
