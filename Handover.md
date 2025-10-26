@@ -24,21 +24,40 @@
 
 **Build Status**: ✅ Clean (0 errors, 10 pre-existing nullable warnings)
 
-### Phase 2.1: File Format Models ✅ (Not Yet Committed)
+### Phase 2: Local File Support (WIP - Build Errors)
+
+**Status**: ⚠️ Core parsers implemented, but `LocalFileDataProvider` has interface mismatch issues
 
 **Files Created:**
-- `src/Lfm.Core/Models/LocalFiles/SpotifyModels.cs`
-  - `SpotifyEndsong` - Extended Streaming History format (endsong*.json)
-  - `SpotifyStreamingHistory` - Standard Streaming History format (StreamingHistory*.json)
+- `src/Lfm.Core/Models/LocalFiles/SpotifyModels.cs` - Spotify data models
+- `src/Lfm.Core/Models/LocalFiles/YouTubeModels.cs` - YouTube Music data models
+- `src/Lfm.Core/Services/LocalFiles/ILocalFileParser.cs` - Parser interface + PlayEvent model
+- `src/Lfm.Core/Services/LocalFiles/SpotifyJsonParser.cs` - Auto-detect Extended/Standard format
+- `src/Lfm.Core/Services/LocalFiles/YouTubeMusicParser.cs` - JSON + CSV support
+- `src/Lfm.Core/Services/LocalFiles/LocalFileAggregator.cs` - Event aggregation logic
+- `src/Lfm.Core/Services/LocalFiles/LocalFileDataProvider.cs` - **⚠️ Interface mismatch**
 
-- `src/Lfm.Core/Models/LocalFiles/YouTubeModels.cs`
-  - `YouTubeWatchHistory` - Google Takeout watch history (watch-history.json)
-  - `YouTubeSubtitle` / `YouTubeDetail` - Supporting types
-  - `YouTubeMusicLibrarySong` - Library CSV format (music-library-songs.csv)
+**Files Modified:**
+- `src/Lfm.Core/Configuration/LfmConfig.cs` - Added `DataSourceMode` enum and config properties
 
-**Directories Created:**
-- `src/Lfm.Core/Models/LocalFiles/`
-- `src/Lfm.Core/Services/LocalFiles/`
+**✅ What Works:**
+1. **Parsers**: SpotifyJsonParser and YouTubeMusicParser successfully parse files
+2. **Aggregation**: LocalFileAggregator converts events → Top lists
+3. **Models**: All data models complete with computed properties
+4. **Config**: DataSourceMode enum ready (LastFm/LocalFiles/Merged)
+
+**⚠️ What Needs Work:**
+1. **LocalFileDataProvider** interface implementation has ~45 build errors
+2. **Root cause**: Returns wrong types (e.g., `List<ArtistInfo>` instead of `TopArtists` wrapper)
+3. **Missing methods**: Several `IMusicDataProvider` methods not implemented
+4. **Type mismatches**: Lookup methods return wrong types (`TrackInfo` vs `TrackLookupInfo`)
+
+**Next Session Decision Point:**
+Two approaches available:
+1. **Full rewrite**: Make LocalFileDataProvider fully conform to IMusicDataProvider (2-3 hours work)
+2. **Simplified adapter**: Create thin wrapper that delegates to parsers/aggregators (1 hour work)
+
+Recommend discussing with user before proceeding.
 
 ## User Requirements (From Planning Session)
 

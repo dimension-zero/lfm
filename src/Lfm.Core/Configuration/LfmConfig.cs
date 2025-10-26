@@ -17,6 +17,13 @@ public enum PlayerType
     Sonos
 }
 
+public enum DataSourceMode
+{
+    LastFm,       // Use Last.fm API only
+    LocalFiles,   // Use local file exports only (Spotify, YouTube Music)
+    Merged        // Combine Last.fm API + local files
+}
+
 public class LfmConfig
 {
     public int ConfigVersion { get; set; } = 1;  // Schema version for migration tracking
@@ -70,6 +77,10 @@ public class LfmConfig
 
     // Player Selection
     public PlayerType DefaultPlayer { get; set; } = PlayerType.Spotify;
+
+    // Data Source Configuration
+    public DataSourceMode DataSource { get; set; } = DataSourceMode.LastFm;
+    public List<string> LocalFilePaths { get; set; } = new();
 
     // Debug settings
     public bool EnableApiDebugLogging { get; set; } = false;
