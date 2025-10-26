@@ -90,10 +90,22 @@ class Program
                     var keyGenerator = serviceProvider.GetRequiredService<ICacheKeyGenerator>();
                     var logger = serviceProvider.GetRequiredService<ILogger<CachedLastFmApiClient>>();
                     var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
-                    
+
                     return new CachedLastFmApiClient(innerClient, cacheStorage, keyGenerator, logger, configManager, 10);
                 });
-                
+
+                // Register IMusicDataProvider - abstraction over data sources
+                // Currently uses Last.fm API only (via LastFmDataProvider adapter)
+                // Future: Support local files (Spotify/YouTube exports) and merged sources
+                services.AddSingleton<IMusicDataProvider>(serviceProvider =>
+                {
+                    var apiClient = serviceProvider.GetRequiredService<ILastFmApiClient>();
+                    var logger = serviceProvider.GetRequiredService<ILogger<LastFmDataProvider>>();
+
+                    // Phase 1: Last.fm API only (maintains existing behavior)
+                    return new LastFmDataProvider(apiClient, logger);
+                });
+
                 services.AddTransient<IDisplayService, DisplayService>();
                 services.AddTransient<ITagFilterService, TagFilterService>();
 
