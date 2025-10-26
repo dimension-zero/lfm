@@ -1,4 +1,5 @@
 using Lfm.Core.Models;
+using Lfm.Core.Models.Results;
 
 namespace Lfm.Core.Services.LocalFiles;
 
@@ -50,4 +51,42 @@ public class PlayEvent
     /// For Spotify Extended History, this is based on ms_played >= 30000.
     /// </summary>
     public bool IsFullPlay { get; init; }
+}
+
+/// <summary>
+/// Simple artist model for aggregation results.
+/// </summary>
+public class LocalArtistInfo
+{
+    public required string Name { get; init; }
+    public int PlayCount { get; init; }
+    public string Url { get; init; } = string.Empty;
+    public string Mbid { get; init; } = string.Empty;
+    public bool Streamable { get; init; }
+}
+
+/// <summary>
+/// Simple track model for aggregation results.
+/// </summary>
+public class LocalTrackInfo
+{
+    public required string Name { get; init; }
+    public required string Artist { get; init; }
+    public int PlayCount { get; init; }
+    public string? AlbumName { get; init; }
+    public string Url { get; init; } = string.Empty;
+    public string Mbid { get; init; } = string.Empty;
+    public bool Streamable { get; init; }
+}
+
+/// <summary>
+/// Simple album model for aggregation results.
+/// </summary>
+public class LocalAlbumInfo
+{
+    public required string Name { get; init; }
+    public required string Artist { get; init; }
+    public int PlayCount { get; init; }
+    public string Url { get; init; } = string.Empty;
+    public string Mbid { get; init; } = string.Empty;
 }

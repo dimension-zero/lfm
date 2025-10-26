@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text.Json;
 using Lfm.Core.Models;
 using Lfm.Core.Models.LocalFiles;
+using Lfm.Core.Models.Results;
 
 namespace Lfm.Core.Services.LocalFiles;
 
@@ -34,7 +35,7 @@ public class YouTubeMusicParser : ILocalFileParser
         try
         {
             if (!File.Exists(filePath))
-                return Result<List<PlayEvent>>.Failure($"File not found: {filePath}");
+                return Result<List<PlayEvent>>.DataError($"File not found: {filePath}");
 
             var extension = Path.GetExtension(filePath).ToLowerInvariant();
 
@@ -43,11 +44,11 @@ public class YouTubeMusicParser : ILocalFileParser
             else if (extension == ".csv")
                 return await ParseLibraryCsvAsync(filePath, startDate, endDate);
             else
-                return Result<List<PlayEvent>>.Failure($"Unsupported file extension: {extension}");
+                return Result<List<PlayEvent>>.DataError($"Unsupported file extension: {extension}");
         }
         catch (Exception ex)
         {
-            return Result<List<PlayEvent>>.Failure($"Error parsing YouTube Music file: {ex.Message}");
+            return Result<List<PlayEvent>>.DataError($"Error parsing YouTube Music file: {ex.Message}");
         }
     }
 
@@ -61,7 +62,7 @@ public class YouTubeMusicParser : ILocalFileParser
             var json = await File.ReadAllTextAsync(filePath);
 
             if (string.IsNullOrWhiteSpace(json))
-                return Result<List<PlayEvent>>.Failure("File is empty");
+                return Result<List<PlayEvent>>.DataError("File is empty");
 
             var options = new JsonSerializerOptions
             {
@@ -71,7 +72,7 @@ public class YouTubeMusicParser : ILocalFileParser
             var items = JsonSerializer.Deserialize<List<YouTubeWatchHistoryItem>>(json, options);
 
             if (items == null)
-                return Result<List<PlayEvent>>.Failure("Failed to deserialize YouTube Watch History");
+                return Result<List<PlayEvent>>.DataError("Failed to deserialize YouTube Watch History");
 
             var events = items
                 .Where(item => item.IsMusicPlayback) // Filter to music only
@@ -80,7 +81,7 @@ public class YouTubeMusicParser : ILocalFileParser
                 {
                     Artist = item.Artist!,
                     Track = item.Title ?? "Unknown Track",
-                    Album = item.Album,
+                    Album = null, // YouTube Music doesn't track albums
                     PlayedAt = item.Time,
                     DataSource = DataSource,
                     DurationMs = null, // Not available in watch history
@@ -95,15 +96,15 @@ public class YouTubeMusicParser : ILocalFileParser
             if (endDate.HasValue)
                 events = events.Where(e => e.PlayedAt <= endDate.Value).ToList();
 
-            return Result<List<PlayEvent>>.Success(events);
+            return Result<List<PlayEvent>>.Ok(events);
         }
         catch (JsonException ex)
         {
-            return Result<List<PlayEvent>>.Failure($"Invalid JSON format: {ex.Message}");
+            return Result<List<PlayEvent>>.DataError($"Invalid JSON format: {ex.Message}");
         }
         catch (Exception ex)
         {
-            return Result<List<PlayEvent>>.Failure($"Error parsing Watch History JSON: {ex.Message}");
+            return Result<List<PlayEvent>>.DataError($"Error parsing Watch History JSON: {ex.Message}");
         }
     }
 
@@ -117,7 +118,7 @@ public class YouTubeMusicParser : ILocalFileParser
             var lines = await File.ReadAllLinesAsync(filePath);
 
             if (lines.Length < 2) // Header + at least one row
-                return Result<List<PlayEvent>>.Success(new List<PlayEvent>());
+                return Result<List<PlayEvent>>.Ok(new List<PlayEvent>());
 
             var header = lines[0].Split(',');
             var titleIdx = Array.FindIndex(header, h => h.Trim().Equals("Title", StringComparison.OrdinalIgnoreCase));
@@ -126,7 +127,7 @@ public class YouTubeMusicParser : ILocalFileParser
             var playCountIdx = Array.FindIndex(header, h => h.Trim().Equals("Play count", StringComparison.OrdinalIgnoreCase));
 
             if (titleIdx == -1 || artistIdx == -1)
-                return Result<List<PlayEvent>>.Failure("CSV missing required columns: Title, Artist");
+                return Result<List<PlayEvent>>.DataError("CSV missing required columns: Title, Artist");
 
             var events = new List<PlayEvent>();
 
@@ -176,11 +177,11 @@ public class YouTubeMusicParser : ILocalFileParser
             if (endDate.HasValue)
                 events = events.Where(e => e.PlayedAt <= endDate.Value).ToList();
 
-            return Result<List<PlayEvent>>.Success(events);
+            return Result<List<PlayEvent>>.Ok(events);
         }
         catch (Exception ex)
         {
-            return Result<List<PlayEvent>>.Failure($"Error parsing Library CSV: {ex.Message}");
+            return Result<List<PlayEvent>>.DataError($"Error parsing Library CSV: {ex.Message}");
         }
     }
 

@@ -7,7 +7,7 @@ namespace Lfm.Core.Models.LocalFiles;
 /// Downloaded via Google Takeout -> YouTube and YouTube Music
 /// Contains YouTube and YouTube Music viewing/listening history
 /// </summary>
-public class YouTubeWatchHistory
+public class YouTubeWatchHistoryItem
 {
     /// <summary>
     /// Header text (e.g., "Watched a video from YouTube Music")
@@ -71,6 +71,13 @@ public class YouTubeWatchHistory
     [JsonIgnore]
     public bool IsMusicPlayback => IsYouTubeMusic ||
                                    (Header?.Contains("Music", StringComparison.OrdinalIgnoreCase) == true);
+
+    /// <summary>
+    /// Computed property: Artist name extracted from subtitles
+    /// First subtitle entry is typically the artist/channel name
+    /// </summary>
+    [JsonIgnore]
+    public string? Artist => Subtitles?.FirstOrDefault()?.Name;
 }
 
 /// <summary>

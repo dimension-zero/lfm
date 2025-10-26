@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Lfm.Core.Models;
 using Lfm.Core.Models.LocalFiles;
+using Lfm.Core.Models.Results;
 
 namespace Lfm.Core.Services.LocalFiles;
 
@@ -37,22 +38,22 @@ public class SpotifyJsonParser : ILocalFileParser
         try
         {
             if (!File.Exists(filePath))
-                return Result<List<PlayEvent>>.Failure($"File not found: {filePath}");
+                return Result<List<PlayEvent>>.DataError($"File not found: {filePath}");
 
             var json = await File.ReadAllTextAsync(filePath);
 
             if (string.IsNullOrWhiteSpace(json))
-                return Result<List<PlayEvent>>.Failure("File is empty");
+                return Result<List<PlayEvent>>.DataError("File is empty");
 
             // Try to detect format by parsing first item
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
             if (root.ValueKind != JsonValueKind.Array)
-                return Result<List<PlayEvent>>.Failure("Expected JSON array at root");
+                return Result<List<PlayEvent>>.DataError("Expected JSON array at root");
 
             if (root.GetArrayLength() == 0)
-                return Result<List<PlayEvent>>.Success(new List<PlayEvent>());
+                return Result<List<PlayEvent>>.Ok(new List<PlayEvent>());
 
             var firstItem = root[0];
             var isExtendedFormat = firstItem.TryGetProperty("ms_played", out _);
@@ -64,11 +65,11 @@ public class SpotifyJsonParser : ILocalFileParser
         }
         catch (JsonException ex)
         {
-            return Result<List<PlayEvent>>.Failure($"Invalid JSON format: {ex.Message}");
+            return Result<List<PlayEvent>>.DataError($"Invalid JSON format: {ex.Message}");
         }
         catch (Exception ex)
         {
-            return Result<List<PlayEvent>>.Failure($"Error parsing Spotify file: {ex.Message}");
+            return Result<List<PlayEvent>>.DataError($"Error parsing Spotify file: {ex.Message}");
         }
     }
 
@@ -87,17 +88,17 @@ public class SpotifyJsonParser : ILocalFileParser
             var items = JsonSerializer.Deserialize<List<SpotifyExtendedHistoryItem>>(json, options);
 
             if (items == null)
-                return Result<List<PlayEvent>>.Failure("Failed to deserialize Spotify Extended History");
+                return Result<List<PlayEvent>>.DataError("Failed to deserialize Spotify Extended History");
 
             var events = items
                 .Where(item => item.IsMusicPlayback) // Filter out podcasts/audiobooks
-                .Where(item => !item.Skipped) // Filter out skipped tracks
+                .Where(item => item.Skipped != true) // Filter out skipped tracks (handle nullable)
                 .Select(item => new PlayEvent
                 {
-                    Artist = item.MasterMetadataAlbumArtistName ?? item.ArtistName ?? "Unknown Artist",
-                    Track = item.MasterMetadataTrackName ?? item.TrackName ?? "Unknown Track",
-                    Album = item.MasterMetadataAlbumAlbumName,
-                    PlayedAt = item.Ts,
+                    Artist = item.ArtistName ?? "Unknown Artist",
+                    Track = item.TrackName ?? "Unknown Track",
+                    Album = item.AlbumName,
+                    PlayedAt = item.Timestamp,
                     DataSource = DataSource,
                     DurationMs = item.MsPlayed,
                     IsFullPlay = item.MsPlayed >= MinimumPlayDurationMs
@@ -111,11 +112,11 @@ public class SpotifyJsonParser : ILocalFileParser
             if (endDate.HasValue)
                 events = events.Where(e => e.PlayedAt <= endDate.Value).ToList();
 
-            return Result<List<PlayEvent>>.Success(events);
+            return Result<List<PlayEvent>>.Ok(events);
         }
         catch (Exception ex)
         {
-            return Result<List<PlayEvent>>.Failure($"Error parsing Extended History: {ex.Message}");
+            return Result<List<PlayEvent>>.DataError($"Error parsing Extended History: {ex.Message}");
         }
     }
 
@@ -134,16 +135,17 @@ public class SpotifyJsonParser : ILocalFileParser
             var items = JsonSerializer.Deserialize<List<SpotifyStandardHistoryItem>>(json, options);
 
             if (items == null)
-                return Result<List<PlayEvent>>.Failure("Failed to deserialize Spotify Standard History");
+                return Result<List<PlayEvent>>.DataError("Failed to deserialize Spotify Standard History");
 
             var events = items
                 .Where(item => item.IsMusicPlayback) // Filter out podcasts
+                .Where(item => item.EndTimeDateTime.HasValue) // Must have valid timestamp
                 .Select(item => new PlayEvent
                 {
                     Artist = item.ArtistName ?? "Unknown Artist",
                     Track = item.TrackName ?? "Unknown Track",
                     Album = null, // Standard format doesn't include album
-                    PlayedAt = item.EndTime,
+                    PlayedAt = item.EndTimeDateTime!.Value,
                     DataSource = DataSource,
                     DurationMs = item.MsPlayed,
                     IsFullPlay = true // Standard format only includes completed plays
@@ -157,11 +159,11 @@ public class SpotifyJsonParser : ILocalFileParser
             if (endDate.HasValue)
                 events = events.Where(e => e.PlayedAt <= endDate.Value).ToList();
 
-            return Result<List<PlayEvent>>.Success(events);
+            return Result<List<PlayEvent>>.Ok(events);
         }
         catch (Exception ex)
         {
-            return Result<List<PlayEvent>>.Failure($"Error parsing Standard History: {ex.Message}");
+            return Result<List<PlayEvent>>.DataError($"Error parsing Standard History: {ex.Message}");
         }
     }
 }

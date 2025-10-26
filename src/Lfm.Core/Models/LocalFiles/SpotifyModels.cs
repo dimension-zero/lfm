@@ -7,7 +7,7 @@ namespace Lfm.Core.Models.LocalFiles;
 /// Downloaded via Spotify Privacy Settings -> "Extended streaming history"
 /// Contains detailed listening history with timestamps and track metadata
 /// </summary>
-public class SpotifyEndsong
+public class SpotifyExtendedHistoryItem
 {
     /// <summary>
     /// UTC timestamp when the track finished playing
@@ -104,6 +104,11 @@ public class SpotifyEndsong
     /// </summary>
     [JsonPropertyName("incognito_mode")]
     public bool? IncognitoMode { get; set; }
+
+    /// <summary>
+    /// Computed property: Whether this is music playback (not podcast/audiobook)
+    /// </summary>
+    public bool IsMusicPlayback => TrackUri?.StartsWith("spotify:track:") ?? false;
 }
 
 /// <summary>
@@ -111,7 +116,7 @@ public class SpotifyEndsong
 /// Downloaded via Spotify Account Privacy -> "Download your data"
 /// Contains last 1 year of listening history (less detailed than Extended History)
 /// </summary>
-public class SpotifyStreamingHistory
+public class SpotifyStandardHistoryItem
 {
     /// <summary>
     /// UTC timestamp when the track ended
@@ -156,4 +161,9 @@ public class SpotifyStreamingHistory
             return null;
         }
     }
+
+    /// <summary>
+    /// Computed property: Whether this is music playback (Standard format doesn't distinguish, assume true)
+    /// </summary>
+    public bool IsMusicPlayback => true;
 }

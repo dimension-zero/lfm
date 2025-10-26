@@ -19,6 +19,11 @@ public class Result<T>
     public bool Success { get; }
 
     /// <summary>
+    /// Whether the operation was successful (alias for Success for compatibility)
+    /// </summary>
+    public bool IsSuccess => Success;
+
+    /// <summary>
     /// Whether the operation failed
     /// </summary>
     public bool IsFailure => !Success;
@@ -29,9 +34,19 @@ public class Result<T>
     public T? Data { get; }
 
     /// <summary>
+    /// The data returned by the operation (alias for Data for compatibility)
+    /// </summary>
+    public T? Value => Data;
+
+    /// <summary>
     /// The error information (null if successful)
     /// </summary>
     public ErrorResult? Error { get; }
+
+    /// <summary>
+    /// The error message (null if successful, alias for Error?.Message for compatibility)
+    /// </summary>
+    public string? ErrorMessage => Error?.Message;
 
     /// <summary>
     /// Creates a successful result with data
