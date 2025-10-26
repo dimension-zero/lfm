@@ -78,6 +78,14 @@ public class YouTubeWatchHistoryItem
     /// </summary>
     [JsonIgnore]
     public string? Artist => Subtitles?.FirstOrDefault()?.Name;
+
+    /// <summary>
+    /// Computed property: Album name
+    /// Watch history doesn't include album data in export.
+    /// Future enhancement: Enrich from AllMusic.com or YouTube Music playlist metadata
+    /// </summary>
+    [JsonIgnore]
+    public string? Album => null; // TODO: Add album enrichment from external sources
 }
 
 /// <summary>

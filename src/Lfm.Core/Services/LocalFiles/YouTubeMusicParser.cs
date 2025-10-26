@@ -81,7 +81,7 @@ public class YouTubeMusicParser : ILocalFileParser
                 {
                     Artist = item.Artist!,
                     Track = item.Title ?? "Unknown Track",
-                    Album = null, // YouTube Music doesn't track albums
+                    Album = item.Album, // May be null; future: enrich from AllMusic.com or playlist metadata
                     PlayedAt = item.Time,
                     DataSource = DataSource,
                     DurationMs = null, // Not available in watch history
