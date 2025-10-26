@@ -1,0 +1,28 @@
+<Project>
+  <PropertyGroup>
+    <!-- Enforce xUnit v3 -->
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Enforce xUnit v3 packages (3.0 or higher) -->
+    <PackageReference Update="xunit.v3" VersionOverride="[3.0,)" />
+    <PackageReference Update="xunit.runner.visualstudio" VersionOverride="[3.0,)" />
+
+    <!-- Prohibit legacy xUnit v2 package 'xunit' -->
+    <PackageReference Update="xunit">
+      <PrivateAssets>all</PrivateAssets>
+      <Publish>false</Publish>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Emit error if legacy xUnit v2 packages are detected -->
+  <Target Name="ValidateXUnitVersion" BeforeTargets="Build">
+    <Error
+      Condition="'%(PackageReference.Identity)' == 'xunit' AND '%(PackageReference.Version)' != ''"
+      Text="Legacy xUnit v2 package 'xunit' (version %(PackageReference.Version)) is prohibited. Use 'xunit.v3' version 3.0 or higher instead." />
+    <Warning
+      Condition="'%(PackageReference.Identity)' == 'xunit.runner.visualstudio' AND $([MSBuild]::VersionLessThan('%(PackageReference.Version)', '3.0'))"
+      Text="xunit.runner.visualstudio version %(PackageReference.Version) is below 3.0. Consider upgrading to xunit.runner.visualstudio.v3 version 3.0 or higher." />
+  </Target>
+</Project>
