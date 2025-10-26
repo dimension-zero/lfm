@@ -1,0 +1,40 @@
+{
+  "topartists": {
+    "artist": [
+      {
+        "name": "Pink Floyd",
+        "playcount": "1234",
+        "url": "https://www.last.fm/music/Pink+Floyd",
+        "mbid": "83d91898-7763-47d7-b03b-b92132375c47",
+        "@attr": {
+          "rank": "1"
+        }
+      },
+      {
+        "name": "The Beatles",
+        "playcount": "987",
+        "url": "https://www.last.fm/music/The+Beatles",
+        "mbid": "b10bbbfc-cf9e-42e0-be17-e2c3e1d2600d",
+        "@attr": {
+          "rank": "2"
+        }
+      },
+      {
+        "name": "Radiohead",
+        "playcount": "765",
+        "url": "https://www.last.fm/music/Radiohead",
+        "mbid": "a74b1b7f-71a5-4011-9441-d0b5e4122711",
+        "@attr": {
+          "rank": "3"
+        }
+      }
+    ],
+    "@attr": {
+      "user": "testuser",
+      "totalPages": "1",
+      "page": "1",
+      "perPage": "3",
+      "total": "3"
+    }
+  }
+}

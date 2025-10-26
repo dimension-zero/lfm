@@ -1,0 +1,55 @@
+{
+  "topalbums": {
+    "album": [
+      {
+        "name": "The Dark Side of the Moon",
+        "playcount": "234",
+        "url": "https://www.last.fm/music/Pink+Floyd/The+Dark+Side+of+the+Moon",
+        "mbid": "c3c3c3c3-3333-3333-3333-333333333333",
+        "artist": {
+          "name": "Pink Floyd",
+          "mbid": "83d91898-7763-47d7-b03b-b92132375c47",
+          "url": "https://www.last.fm/music/Pink+Floyd"
+        },
+        "@attr": {
+          "rank": "1"
+        }
+      },
+      {
+        "name": "Abbey Road",
+        "playcount": "198",
+        "url": "https://www.last.fm/music/The+Beatles/Abbey+Road",
+        "mbid": "d4d4d4d4-4444-4444-4444-444444444444",
+        "artist": {
+          "name": "The Beatles",
+          "mbid": "b10bbbfc-cf9e-42e0-be17-e2c3e1d2600d",
+          "url": "https://www.last.fm/music/The+Beatles"
+        },
+        "@attr": {
+          "rank": "2"
+        }
+      },
+      {
+        "name": "OK Computer",
+        "playcount": "176",
+        "url": "https://www.last.fm/music/Radiohead/OK+Computer",
+        "mbid": "e5e5e5e5-5555-5555-5555-555555555555",
+        "artist": {
+          "name": "Radiohead",
+          "mbid": "a74b1b7f-71a5-4011-9441-d0b5e4122711",
+          "url": "https://www.last.fm/music/Radiohead"
+        },
+        "@attr": {
+          "rank": "3"
+        }
+      }
+    ],
+    "@attr": {
+      "user": "testuser",
+      "totalPages": "1",
+      "page": "1",
+      "perPage": "3",
+      "total": "3"
+    }
+  }
+}
