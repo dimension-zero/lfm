@@ -1,6 +1,8 @@
 using Lfm.Cli.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -13,13 +15,13 @@ public class CreatePlaylistCommand : BaseCommand
     private readonly ISpotifyStreamingService _spotifyStreamingService;
 
     public CreatePlaylistCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         IPlaylistInputParser inputParser,
         ISpotifyStreamingService spotifyStreamingService,
         ILogger<CreatePlaylistCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _inputParser = inputParser ?? throw new ArgumentNullException(nameof(inputParser));
         _spotifyStreamingService = spotifyStreamingService ?? throw new ArgumentNullException(nameof(spotifyStreamingService));
@@ -80,7 +82,7 @@ public class CreatePlaylistCommand : BaseCommand
 
                 try
                 {
-                    var trackResult = await _apiClient.GetTrackInfoWithResultAsync(request.Artist, request.Track, "");
+                    var trackResult = await _dataProvider.GetTrackInfoAsync(request.Artist, request.Track, "");
 
                     if (trackResult.Success && trackResult.Data != null)
                     {

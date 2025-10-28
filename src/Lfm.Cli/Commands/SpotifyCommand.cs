@@ -1,4 +1,5 @@
 using Lfm.Core.Services;
+using Lfm.Shared.Services;
 using Lfm.Spotify;
 using Microsoft.Extensions.Logging;
 

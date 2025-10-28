@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Lfm.Shared.Models.Results;
 using Lfm.Sonos.Models;
 
 namespace Lfm.Core.Configuration;
@@ -24,6 +25,13 @@ public enum DataSourceMode
     Merged        // Combine Last.fm API + local files
 }
 
+public enum EnrichmentMode
+{
+    Optional,     // Enrichment only runs if explicitly requested
+    BestEffort,   // Try enrichment, gracefully degrade on failure
+    Mandatory     // Fail parsing if enrichment unavailable
+}
+
 public class LfmConfig
 {
     public int ConfigVersion { get; set; } = 1;  // Schema version for migration tracking
@@ -35,7 +43,13 @@ public class LfmConfig
     public int ParallelApiCalls { get; set; } = 5;
     public int NormalSearchDepth { get; set; } = 10000;
     public int DeepSearchTimeoutSeconds { get; set; } = 300;
-    
+
+    // Circuit Breaker Configuration
+    public bool CircuitBreakerEnabled { get; set; } = true;
+    public int CircuitBreakerFailureThreshold { get; set; } = 5;
+    public int CircuitBreakerSuccessThreshold { get; set; } = 2;
+    public int CircuitBreakerOpenTimeoutSeconds { get; set; } = 60;
+
     // Cache Configuration
     public bool CacheEnabled { get; set; } = true;
     public int CacheExpiryMinutes { get; set; } = 10;
@@ -82,6 +96,9 @@ public class LfmConfig
     public DataSourceMode DataSource { get; set; } = DataSourceMode.LastFm;
     public List<string> LocalFilePaths { get; set; } = new();
 
+    // Album Enrichment Configuration
+    public AlbumEnrichmentConfig AlbumEnrichment { get; set; } = new();
+
     // Debug settings
     public bool EnableApiDebugLogging { get; set; } = false;
 }
@@ -98,9 +115,58 @@ public class SpotifyConfig
     public bool FallbackToLooseSearch { get; set; } = true;
 }
 
+public class AlbumEnrichmentConfig
+{
+    /// <summary>
+    /// Enable album enrichment for local files that lack album metadata.
+    /// </summary>
+    public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// Enrichment behavior mode.
+    /// Optional: Only enrich if explicitly requested
+    /// BestEffort: Try enrichment, fall back to null on errors
+    /// Mandatory: Fail if enrichment unavailable
+    /// </summary>
+    public EnrichmentMode Mode { get; set; } = EnrichmentMode.BestEffort;
+
+    /// <summary>
+    /// Priority order of enrichers to try (first successful wins).
+    /// Valid values: "LastFm", "Spotify", "MusicBrainz", "YouTubeCsv", "YouTubeApi"
+    /// </summary>
+    public List<string> EnricherPriority { get; set; } = new()
+    {
+        "LastFm",       // Fastest, already integrated
+        "Spotify",      // Fast, already integrated
+        "YouTubeCsv",   // No API calls, offline
+        "MusicBrainz"   // Comprehensive, open database
+    };
+
+    /// <summary>
+    /// Timeout per enricher query in milliseconds.
+    /// </summary>
+    public int TimeoutMs { get; set; } = 3000;
+
+    /// <summary>
+    /// Cache enrichment results to avoid repeated API calls.
+    /// </summary>
+    public bool CacheResults { get; set; } = true;
+
+    /// <summary>
+    /// YouTube Data API v3 key (required for YouTubeApi enricher).
+    /// </summary>
+    public string YouTubeApiKey { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Path to YouTube Music library CSV for local lookup.
+    /// </summary>
+    public string YouTubeLibraryCsvPath { get; set; } = string.Empty;
+}
+
 public interface IConfigurationManager
 {
     Task<LfmConfig> LoadAsync();
+    Task<Result<LfmConfig>> LoadWithValidationAsync();
     Task SaveAsync(LfmConfig config);
     string GetConfigPath();
 }
@@ -108,12 +174,14 @@ public interface IConfigurationManager
 public class ConfigurationManager : IConfigurationManager
 {
     private readonly ILogger<ConfigurationManager> _logger;
+    private readonly IConfigurationValidator? _validator;
     private readonly string _configPath;
     private readonly SemaphoreSlim _fileLock = new(1, 1);
 
-    public ConfigurationManager(ILogger<ConfigurationManager> logger)
+    public ConfigurationManager(ILogger<ConfigurationManager> logger, IConfigurationValidator? validator = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _validator = validator;
 
         var configDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -281,6 +349,38 @@ public class ConfigurationManager : IConfigurationManager
         {
             _logger.LogError(ex, "Error loading configuration from {Path}", _configPath);
             throw new InvalidOperationException($"Failed to load config from {_configPath}. Check logs for details.", ex);
+        }
+    }
+
+    public async Task<Result<LfmConfig>> LoadWithValidationAsync()
+    {
+        try
+        {
+            // Load configuration
+            var config = await LoadAsync();
+
+            // Validate if validator is available
+            if (_validator != null)
+            {
+                var validationResult = _validator.Validate(config);
+                if (!validationResult.IsSuccess)
+                {
+                    return validationResult;
+                }
+            }
+            else
+            {
+                _logger.LogDebug("Configuration validator not available - skipping validation");
+            }
+
+            return Result<LfmConfig>.Ok(config);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading and validating configuration");
+            return Result<LfmConfig>.Fail(ErrorType.ConfigurationError,
+                "Failed to load and validate configuration",
+                ex.Message);
         }
     }
 

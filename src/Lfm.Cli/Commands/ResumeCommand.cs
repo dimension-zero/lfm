@@ -1,3 +1,5 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Lfm.Spotify;

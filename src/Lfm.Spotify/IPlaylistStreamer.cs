@@ -1,4 +1,4 @@
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Lfm.Spotify.Models;
 
 namespace Lfm.Spotify;

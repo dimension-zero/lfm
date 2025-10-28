@@ -1,3 +1,5 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -10,12 +12,12 @@ public class RecentCommand : BaseCommand
     private readonly ILastFmService _lastFmService;
 
     public RecentCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILastFmService lastFmService,
         ISymbolProvider symbolProvider,
         ILogger<RecentCommand> logger)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _lastFmService = lastFmService ?? throw new ArgumentNullException(nameof(lastFmService));
     }
@@ -98,7 +100,7 @@ public class RecentCommand : BaseCommand
         });
     }
 
-    private string GetFormattedTime(Lfm.Core.Models.DateInfo? date)
+    private string GetFormattedTime(Lfm.Shared.Models.DateInfo? date)
     {
         if (date == null || !long.TryParse(date.UnixTimestamp, out var unixTimestamp))
             return "unknown time";

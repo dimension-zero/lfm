@@ -1,6 +1,8 @@
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
+using Lfm.Shared.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Lfm.Core.Services;
@@ -11,41 +13,47 @@ namespace Lfm.Core.Services;
 /// </summary>
 public class LastFmService : ILastFmService
 {
-    private readonly ILastFmApiClient _apiClient;
+    private readonly IMusicDataProvider _dataProvider;
     private readonly IConfigurationManager _configManager;
     private readonly ITagFilterService _tagFilterService;
+    private readonly IRecommendationEngine _recommendationEngine;
     private readonly ILogger<LastFmService> _logger;
     private readonly object? _spotifyStreamer;
 
     public LastFmService(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ITagFilterService tagFilterService,
+        IRecommendationEngine recommendationEngine,
         ILogger<LastFmService> logger,
         object? spotifyStreamer = null)
     {
-        _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+        _dataProvider = dataProvider ?? throw new ArgumentNullException(nameof(dataProvider));
         _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
         _tagFilterService = tagFilterService ?? throw new ArgumentNullException(nameof(tagFilterService));
+        _recommendationEngine = recommendationEngine ?? throw new ArgumentNullException(nameof(recommendationEngine));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _spotifyStreamer = spotifyStreamer; // Optional dependency - IPlaylistStreamer from Lfm.Spotify
     }
 
 
     // Basic user content retrieval
-    public async Task<TopArtists?> GetUserTopArtistsAsync(string username, string period, int limit = 10, int page = 1)
+    public async Task<TopArtists?> GetUserTopArtistsAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
     {
-        return await _apiClient.GetTopArtistsAsync(username, period, limit, page);
+        var result = await _dataProvider.GetTopArtistsAsync(username, period, limit, page);
+        return result.IsSuccess ? result.Data : null;
     }
 
-    public async Task<TopTracks?> GetUserTopTracksAsync(string username, string period, int limit = 10, int page = 1)
+    public async Task<TopTracks?> GetUserTopTracksAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
     {
-        return await _apiClient.GetTopTracksAsync(username, period, limit, page);
+        var result = await _dataProvider.GetTopTracksAsync(username, period, limit, page);
+        return result.IsSuccess ? result.Data : null;
     }
 
-    public async Task<TopAlbums?> GetUserTopAlbumsAsync(string username, string period, int limit = 10, int page = 1)
+    public async Task<TopAlbums?> GetUserTopAlbumsAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
     {
-        return await _apiClient.GetTopAlbumsAsync(username, period, limit, page);
+        var result = await _dataProvider.GetTopAlbumsAsync(username, period, limit, page);
+        return result.IsSuccess ? result.Data : null;
     }
 
     public async Task<RecentTracks?> GetUserRecentTracksAsync(string username, int limit = 20, int? hoursBack = null)
@@ -63,74 +71,90 @@ public class LastFmService : ILastFmService
             from = to.AddDays(-7);
         }
 
-        return await _apiClient.GetRecentTracksAsync(username, from, to, limit, page: 1);
+        var result = await _dataProvider.GetRecentTracksAsync(username, from, to, limit, page: 1);
+        return result.IsSuccess ? result.Data : null;
     }
 
     // Date range variants
     public async Task<TopArtists?> GetUserTopArtistsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
     {
-        return await _apiClient.GetTopArtistsForDateRangeAsync(username, from, to, limit);
+        var result = await _dataProvider.GetTopArtistsForDateRangeAsync(username, from, to, limit);
+        return result.IsSuccess ? result.Data : null;
     }
 
     public async Task<TopTracks?> GetUserTopTracksForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
     {
-        return await _apiClient.GetTopTracksForDateRangeAsync(username, from, to, limit);
+        var result = await _dataProvider.GetTopTracksForDateRangeAsync(username, from, to, limit);
+        return result.IsSuccess ? result.Data : null;
     }
 
     public async Task<TopAlbums?> GetUserTopAlbumsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
     {
-        return await _apiClient.GetTopAlbumsForDateRangeAsync(username, from, to, limit);
+        var result = await _dataProvider.GetTopAlbumsForDateRangeAsync(username, from, to, limit);
+        return result.IsSuccess ? result.Data : null;
     }
 
     // Artist-specific content
     public async Task<TopTracks?> GetArtistTopTracksAsync(string artistName, int limit = 10)
     {
-        return await _apiClient.GetArtistTopTracksAsync(artistName, limit);
+        var result = await _dataProvider.GetArtistTopTracksAsync(artistName, limit);
+        return result.IsSuccess ? result.Data : null;
     }
 
     public async Task<TopAlbums?> GetArtistTopAlbumsAsync(string artistName, int limit = 10)
     {
-        return await _apiClient.GetArtistTopAlbumsAsync(artistName, limit);
+        var result = await _dataProvider.GetArtistTopAlbumsAsync(artistName, limit);
+        return result.IsSuccess ? result.Data : null;
     }
 
     public async Task<SimilarArtists?> GetSimilarArtistsAsync(string artistName, int limit = 50)
     {
-        return await _apiClient.GetSimilarArtistsAsync(artistName, limit);
+        var result = await _dataProvider.GetSimilarArtistsAsync(artistName, limit);
+        return result.IsSuccess ? result.Data : null;
     }
 
     // Range queries - complex operations that span multiple pages
-    public async Task<(List<Artist> items, string totalCount)> GetUserTopArtistsRangeAsync(string username, string period, int startIndex, int endIndex)
+    public async Task<(List<Artist> items, string totalCount)> GetUserTopArtistsRangeAsync(string username, LastFmPeriod period, int startIndex, int endIndex)
     {
         return await ExecuteRangeQueryAsync<Artist, TopArtists>(
             username,
             period,
             startIndex,
             endIndex,
-            (user, per, limit, page) => _apiClient.GetTopArtistsAsync(user, per, limit, page),
+            async (user, per, limit, page) => {
+                var result = await _dataProvider.GetTopArtistsAsync(user, per, limit, page);
+                return result.IsSuccess ? result.Data : null;
+            },
             response => response.Artists,
             response => response.Attributes.Total);
     }
 
-    public async Task<(List<Track> items, string totalCount)> GetUserTopTracksRangeAsync(string username, string period, int startIndex, int endIndex)
+    public async Task<(List<Track> items, string totalCount)> GetUserTopTracksRangeAsync(string username, LastFmPeriod period, int startIndex, int endIndex)
     {
         return await ExecuteRangeQueryAsync<Track, TopTracks>(
             username,
             period,
             startIndex,
             endIndex,
-            (user, per, limit, page) => _apiClient.GetTopTracksAsync(user, per, limit, page),
+            async (user, per, limit, page) => {
+                var result = await _dataProvider.GetTopTracksAsync(user, per, limit, page);
+                return result.IsSuccess ? result.Data : null;
+            },
             response => response.Tracks,
             response => response.Attributes.Total);
     }
 
-    public async Task<(List<Album> items, string totalCount)> GetUserTopAlbumsRangeAsync(string username, string period, int startIndex, int endIndex)
+    public async Task<(List<Album> items, string totalCount)> GetUserTopAlbumsRangeAsync(string username, LastFmPeriod period, int startIndex, int endIndex)
     {
         return await ExecuteRangeQueryAsync<Album, TopAlbums>(
             username,
             period,
             startIndex,
             endIndex,
-            (user, per, limit, page) => _apiClient.GetTopAlbumsAsync(user, per, limit, page),
+            async (user, per, limit, page) => {
+                var result = await _dataProvider.GetTopAlbumsAsync(user, per, limit, page);
+                return result.IsSuccess ? result.Data : null;
+            },
             response => response.Albums,
             response => response.Attributes.Total);
     }
@@ -150,7 +174,8 @@ public class LastFmService : ILastFmService
                 await Task.Delay(100); // Use configured throttle value
             }
 
-            var result = await _apiClient.GetTopTracksAsync(username, "overall", SearchConstants.Api.MaxItemsPerPage, page);
+            var providerResult = await _dataProvider.GetTopTracksAsync(username, LastFmPeriod.Overall, SearchConstants.Api.MaxItemsPerPage, page);
+            var result = providerResult.IsSuccess ? providerResult.Data : null;
 
             if (result?.Tracks == null || !result.Tracks.Any())
                 break;
@@ -182,7 +207,8 @@ public class LastFmService : ILastFmService
                 await Task.Delay(100); // Use configured throttle value
             }
 
-            var result = await _apiClient.GetTopAlbumsAsync(username, "overall", SearchConstants.Api.MaxItemsPerPage, page);
+            var providerResult = await _dataProvider.GetTopAlbumsAsync(username, LastFmPeriod.Overall, SearchConstants.Api.MaxItemsPerPage, page);
+            var result = providerResult.IsSuccess ? providerResult.Data : null;
 
             if (result?.Albums == null || !result.Albums.Any())
                 break;
@@ -201,143 +227,16 @@ public class LastFmService : ILastFmService
     }
 
     // Advanced features
-    public async Task<List<RecommendationResult>> GetMusicRecommendationsAsync(string username,
+    public Task<List<RecommendationResult>> GetMusicRecommendationsAsync(string username,
         int analysisLimit = 20,
         int recommendationLimit = 20,
         int filterThreshold = 0,
         int tracksPerArtist = 0,
-        string period = "overall",
+        LastFmPeriod period = LastFmPeriod.Overall,
         bool excludeTags = false)
-    {
-        // Step 1: Get user's top artists for analysis
-        var topArtists = await _apiClient.GetTopArtistsAsync(username, period, analysisLimit);
-        if (topArtists?.Artists == null || !topArtists.Artists.Any())
-        {
-            return new List<RecommendationResult>();
-        }
+        => _recommendationEngine.GetMusicRecommendationsAsync(username, analysisLimit, recommendationLimit, filterThreshold, tracksPerArtist, period, excludeTags);
 
-        // Step 2: Build user's play count map for filtering
-        var userPlayCounts = await GetUserArtistPlayCountsAsync(username);
-
-        // Step 3: Get similar artists for each top artist (sequential with throttling)
-        var recommendations = new Dictionary<string, RecommendationData>();
-
-        for (int i = 0; i < topArtists.Artists.Count; i++)
-        {
-            var topArtist = topArtists.Artists[i];
-
-            try
-            {
-                // Apply throttling between API calls (except for first call)
-                if (i > 0)
-                {
-                    // Throttling now handled by CachedLastFmApiClient
-                }
-
-                var similar = await _apiClient.GetSimilarArtistsAsync(topArtist.Name);
-
-                if (similar?.Artists != null)
-                {
-                    foreach (var similarArtist in similar.Artists)
-                    {
-                        if (!float.TryParse(similarArtist.Match, out var matchScore))
-                            matchScore = 0;
-
-                        if (recommendations.TryGetValue(similarArtist.Name, out var existing))
-                        {
-                            existing.TotalSimilarity += matchScore;
-                            existing.OccurrenceCount++;
-                            existing.SourceArtists.Add(topArtist.Name);
-                        }
-                        else
-                        {
-                            recommendations[similarArtist.Name] = new RecommendationData
-                            {
-                                Artist = similarArtist,
-                                TotalSimilarity = matchScore,
-                                OccurrenceCount = 1,
-                                SourceArtists = new List<string> { topArtist.Name }
-                            };
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to get similar artists for {Artist}", topArtist.Name);
-            }
-        }
-
-        // Step 4: Filter by play count and create initial recommendations
-        var initialRecommendations = recommendations.Values
-            .Where(r =>
-            {
-                if (userPlayCounts.TryGetValue(r.Artist.Name, out var playCount))
-                {
-                    return playCount < filterThreshold;
-                }
-                return true; // Include if we don't have data (assume new artist)
-            })
-            .Select(r => new RecommendationResult
-            {
-                ArtistName = r.Artist.Name,
-                Score = (r.TotalSimilarity / r.OccurrenceCount) * r.OccurrenceCount,
-                AverageSimilarity = r.TotalSimilarity / r.OccurrenceCount,
-                OccurrenceCount = r.OccurrenceCount,
-                UserPlayCount = userPlayCounts.GetValueOrDefault(r.Artist.Name, 0),
-                SourceArtists = r.SourceArtists
-            })
-            .OrderByDescending(r => r.Score)
-            .ToList();
-
-        // Step 5: Apply tag filtering if requested via CLI flag or enabled in config
-        var filteredRecommendations = initialRecommendations;
-        var config = await _configManager.LoadAsync();
-
-        // Apply filtering if:
-        // 1. --exclude-tags CLI flag is used, OR
-        // 2. EnableTagFiltering is true in config (automatic filtering)
-        if ((excludeTags || config.EnableTagFiltering) && config.ExcludedTags.Any())
-        {
-            filteredRecommendations = await ApplyDynamicTagFilteringAsync(
-                initialRecommendations, config, recommendationLimit);
-        }
-
-        // Take final limit
-        filteredRecommendations = filteredRecommendations.Take(recommendationLimit).ToList();
-
-        // Step 5: Fetch top tracks if requested (sequential with throttling)
-        if (tracksPerArtist > 0)
-        {
-            for (int i = 0; i < filteredRecommendations.Count; i++)
-            {
-                var rec = filteredRecommendations[i];
-                
-                try
-                {
-                    // Apply throttling between API calls (except for first call)
-                    if (i > 0)
-                    {
-                        // Throttling now handled by CachedLastFmApiClient
-                    }
-
-                    var tracks = await _apiClient.GetArtistTopTracksAsync(rec.ArtistName, tracksPerArtist);
-                    if (tracks?.Tracks != null)
-                    {
-                        rec.TopTracks = tracks.Tracks;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to get tracks for {Artist}", rec.ArtistName);
-                }
-            }
-        }
-
-        return filteredRecommendations;
-    }
-
-    public async Task<List<RecommendationResult>> GetMusicRecommendationsForDateRangeAsync(string username,
+    public Task<List<RecommendationResult>> GetMusicRecommendationsForDateRangeAsync(string username,
         DateTime from,
         DateTime to,
         int analysisLimit = 20,
@@ -345,241 +244,260 @@ public class LastFmService : ILastFmService
         int filterThreshold = 0,
         int tracksPerArtist = 0,
         bool excludeTags = false)
-    {
-        // Step 1: Get user's top artists for the date range
-        var topArtists = await _apiClient.GetTopArtistsForDateRangeAsync(username, from, to, analysisLimit);
-        if (topArtists?.Artists == null || !topArtists.Artists.Any())
-        {
-            return new List<RecommendationResult>();
-        }
+        => _recommendationEngine.GetMusicRecommendationsForDateRangeAsync(username, from, to, analysisLimit, recommendationLimit, filterThreshold, tracksPerArtist, excludeTags);
 
-        // Step 2: Build user's play count map for filtering (use overall data for filtering)
-        var userPlayCounts = await GetUserArtistPlayCountsAsync(username);
-
-        // Step 3: Get similar artists for each top artist (sequential with throttling)
-        var recommendations = new Dictionary<string, RecommendationData>();
-
-        for (int i = 0; i < topArtists.Artists.Count; i++)
-        {
-            var topArtist = topArtists.Artists[i];
-
-            try
-            {
-                // Apply throttling between API calls (except for first call)
-                if (i > 0)
-                {
-                    // Throttling now handled by CachedLastFmApiClient
-                }
-
-                var similar = await _apiClient.GetSimilarArtistsAsync(topArtist.Name);
-
-                if (similar?.Artists != null)
-                {
-                    foreach (var similarArtist in similar.Artists)
-                    {
-                        if (!float.TryParse(similarArtist.Match, out var matchScore))
-                            matchScore = 0;
-
-                        if (recommendations.TryGetValue(similarArtist.Name, out var existing))
-                        {
-                            existing.TotalSimilarity += matchScore;
-                            existing.OccurrenceCount++;
-                            existing.SourceArtists.Add(topArtist.Name);
-                        }
-                        else
-                        {
-                            recommendations[similarArtist.Name] = new RecommendationData
-                            {
-                                Artist = similarArtist,
-                                TotalSimilarity = matchScore,
-                                OccurrenceCount = 1,
-                                SourceArtists = new List<string> { topArtist.Name }
-                            };
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to get similar artists for {Artist}", topArtist.Name);
-            }
-        }
-
-        // Step 4: Filter by play count and create initial recommendations
-        var initialRecommendations = recommendations.Values
-            .Where(r =>
-            {
-                if (userPlayCounts.TryGetValue(r.Artist.Name, out var playCount))
-                {
-                    return playCount < filterThreshold;
-                }
-                return true; // Include if we don't have data (assume new artist)
-            })
-            .Select(r => new RecommendationResult
-            {
-                ArtistName = r.Artist.Name,
-                Score = (r.TotalSimilarity / r.OccurrenceCount) * r.OccurrenceCount,
-                AverageSimilarity = r.TotalSimilarity / r.OccurrenceCount,
-                OccurrenceCount = r.OccurrenceCount,
-                UserPlayCount = userPlayCounts.GetValueOrDefault(r.Artist.Name, 0),
-                SourceArtists = r.SourceArtists
-            })
-            .OrderByDescending(r => r.Score)
-            .ToList();
-
-        // Step 5: Apply tag filtering if requested via CLI flag or enabled in config
-        var filteredRecommendations = initialRecommendations;
-        var config = await _configManager.LoadAsync();
-
-        // Apply filtering if:
-        // 1. --exclude-tags CLI flag is used, OR
-        // 2. EnableTagFiltering is true in config (automatic filtering)
-        if ((excludeTags || config.EnableTagFiltering) && config.ExcludedTags.Any())
-        {
-            filteredRecommendations = await ApplyDynamicTagFilteringAsync(
-                initialRecommendations, config, recommendationLimit);
-        }
-
-        // Take final limit
-        filteredRecommendations = filteredRecommendations.Take(recommendationLimit).ToList();
-
-        // Step 5: Fetch top tracks if requested (sequential with throttling)
-        if (tracksPerArtist > 0)
-        {
-            for (int i = 0; i < filteredRecommendations.Count; i++)
-            {
-                var rec = filteredRecommendations[i];
-                
-                try
-                {
-                    // Apply throttling between API calls (except for first call)
-                    if (i > 0)
-                    {
-                        // Throttling now handled by CachedLastFmApiClient
-                    }
-
-                    var tracks = await _apiClient.GetArtistTopTracksAsync(rec.ArtistName, tracksPerArtist);
-                    if (tracks?.Tracks != null)
-                    {
-                        rec.TopTracks = tracks.Tracks;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to get tracks for {Artist}", rec.ArtistName);
-                }
-            }
-        }
-
-        return filteredRecommendations;
-    }
-
-    public async Task<Dictionary<string, int>> GetUserArtistPlayCountsAsync(string username, int maxArtists = int.MaxValue)
-    {
-        var userPlayCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        const int pageSize = 1000;
-        var page = 1;
-        var processedArtists = 0;
-
-        while (processedArtists < maxArtists)
-        {
-            // Apply throttling between API calls (except for first page)
-            if (page > 1)
-            {
-                // Throttling now handled by CachedLastFmApiClient
-            }
-
-            var result = await _apiClient.GetTopArtistsAsync(username, "overall", pageSize, page);
-            
-            if (result?.Artists == null || !result.Artists.Any())
-                break;
-
-            foreach (var artist in result.Artists.Take(maxArtists - processedArtists))
-            {
-                if (int.TryParse(artist.PlayCount, out var playCount))
-                {
-                    userPlayCounts[artist.Name] = playCount;
-                }
-            }
-
-            processedArtists += result.Artists.Count;
-            
-            var totalPages = int.TryParse(result.Attributes.TotalPages, out var tp) ? tp : 1;
-            if (page >= totalPages)
-                break;
-                
-            page++;
-        }
-
-        return userPlayCounts;
-    }
+    public Task<Dictionary<string, int>> GetUserArtistPlayCountsAsync(string username, int maxArtists = int.MaxValue)
+        => _recommendationEngine.GetUserArtistPlayCountsAsync(username, maxArtists);
 
     // New Result-based methods for gradual migration
-    public async Task<Result<TopArtists>> GetUserTopArtistsWithResultAsync(string username, string period, int limit = 10, int page = 1)
+    public async Task<Result<TopArtists>> GetUserTopArtistsWithResultAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
     {
-        try
-        {
-            // Validate inputs
-            if (string.IsNullOrWhiteSpace(username))
-                return Result<TopArtists>.ValidationError("Username cannot be empty");
-            
-            if (string.IsNullOrWhiteSpace(period))
-                return Result<TopArtists>.ValidationError("Period cannot be empty");
-            
-            if (limit <= 0 || limit > 1000)
-                return Result<TopArtists>.ValidationError("Limit must be between 1 and 1000");
+        // Service-layer validation
+        if (string.IsNullOrWhiteSpace(username))
+            return Result<TopArtists>.ValidationError("Username cannot be empty");
 
-            var result = await _apiClient.GetTopArtistsAsync(username, period, limit, page);
-            
-            if (result == null)
-                return Result<TopArtists>.DataError("No artist data returned from Last.fm");
-            
-            if (result.Artists == null || !result.Artists.Any())
-                return Result<TopArtists>.DataError($"No artists found for user '{username}' in period '{period}'");
+        if (limit <= 0 || limit > 1000)
+            return Result<TopArtists>.ValidationError("Limit must be between 1 and 1000");
 
-            return Result<TopArtists>.Ok(result);
-        }
-        catch (Exception ex)
+        // Call API client WithResultAsync - preserves error details
+        var result = await _dataProvider.GetTopArtistsAsync(username, period, limit, page);
+
+        // Add service-layer business logic checks if needed
+        if (result.IsSuccess && (result.Data?.Artists == null || !result.Data.Artists.Any()))
         {
-            _logger.LogError(ex, "Error getting top artists for user {Username}", username);
-            return Result<TopArtists>.ApiError("Failed to retrieve artist data", ex.Message);
+            return Result<TopArtists>.DataError($"No artists found for user '{username}' in period '{period.ToApiString()}'");
         }
+
+        return result;
     }
 
-    public async Task<Result<List<RecommendationResult>>> GetMusicRecommendationsWithResultAsync(string username,
+    public async Task<Result<TopTracks>> GetUserTopTracksWithResultAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return Result<TopTracks>.ValidationError("Username cannot be empty");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<TopTracks>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetTopTracksAsync(username, period, limit, page);
+
+        if (result.IsSuccess && (result.Data?.Tracks == null || !result.Data.Tracks.Any()))
+        {
+            return Result<TopTracks>.DataError($"No tracks found for user '{username}' in period '{period.ToApiString()}'");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<TopAlbums>> GetUserTopAlbumsWithResultAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return Result<TopAlbums>.ValidationError("Username cannot be empty");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<TopAlbums>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetTopAlbumsAsync(username, period, limit, page);
+
+        if (result.IsSuccess && (result.Data?.Albums == null || !result.Data.Albums.Any()))
+        {
+            return Result<TopAlbums>.DataError($"No albums found for user '{username}' in period '{period.ToApiString()}'");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<TopArtists>> GetUserTopArtistsForDateRangeWithResultAsync(string username, DateTime from, DateTime to, int limit = 10)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return Result<TopArtists>.ValidationError("Username cannot be empty");
+
+        if (from > to)
+            return Result<TopArtists>.ValidationError("'from' date must be before 'to' date");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<TopArtists>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetTopArtistsForDateRangeAsync(username, from, to, limit);
+
+        if (result.IsSuccess && (result.Data?.Artists == null || !result.Data.Artists.Any()))
+        {
+            return Result<TopArtists>.DataError($"No artists found for user '{username}' in date range");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<TopTracks>> GetUserTopTracksForDateRangeWithResultAsync(string username, DateTime from, DateTime to, int limit = 10)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return Result<TopTracks>.ValidationError("Username cannot be empty");
+
+        if (from > to)
+            return Result<TopTracks>.ValidationError("'from' date must be before 'to' date");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<TopTracks>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetTopTracksForDateRangeAsync(username, from, to, limit);
+
+        if (result.IsSuccess && (result.Data?.Tracks == null || !result.Data.Tracks.Any()))
+        {
+            return Result<TopTracks>.DataError($"No tracks found for user '{username}' in date range");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<TopAlbums>> GetUserTopAlbumsForDateRangeWithResultAsync(string username, DateTime from, DateTime to, int limit = 10)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return Result<TopAlbums>.ValidationError("Username cannot be empty");
+
+        if (from > to)
+            return Result<TopAlbums>.ValidationError("'from' date must be before 'to' date");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<TopAlbums>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetTopAlbumsForDateRangeAsync(username, from, to, limit);
+
+        if (result.IsSuccess && (result.Data?.Albums == null || !result.Data.Albums.Any()))
+        {
+            return Result<TopAlbums>.DataError($"No albums found for user '{username}' in date range");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<RecentTracks>> GetRecentTracksWithResultAsync(string username, DateTime from, DateTime to, int limit = 200, int page = 1)
+    {
+        if (string.IsNullOrWhiteSpace(username))
+            return Result<RecentTracks>.ValidationError("Username cannot be empty");
+
+        if (from > to)
+            return Result<RecentTracks>.ValidationError("'from' date must be before 'to' date");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<RecentTracks>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetRecentTracksAsync(username, from, to, limit, page);
+
+        if (result.IsSuccess && (result.Data?.Tracks == null || !result.Data.Tracks.Any()))
+        {
+            return Result<RecentTracks>.DataError($"No recent tracks found for user '{username}' in date range");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<TopTracks>> GetArtistTopTracksWithResultAsync(string artist, int limit = 10)
+    {
+        if (string.IsNullOrWhiteSpace(artist))
+            return Result<TopTracks>.ValidationError("Artist name cannot be empty");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<TopTracks>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetArtistTopTracksAsync(artist, limit);
+
+        if (result.IsSuccess && (result.Data?.Tracks == null || !result.Data.Tracks.Any()))
+        {
+            return Result<TopTracks>.DataError($"No tracks found for artist '{artist}'");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<TopAlbums>> GetArtistTopAlbumsWithResultAsync(string artist, int limit = 10)
+    {
+        if (string.IsNullOrWhiteSpace(artist))
+            return Result<TopAlbums>.ValidationError("Artist name cannot be empty");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<TopAlbums>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetArtistTopAlbumsAsync(artist, limit);
+
+        if (result.IsSuccess && (result.Data?.Albums == null || !result.Data.Albums.Any()))
+        {
+            return Result<TopAlbums>.DataError($"No albums found for artist '{artist}'");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<SimilarArtists>> GetSimilarArtistsWithResultAsync(string artist, int limit = 50)
+    {
+        if (string.IsNullOrWhiteSpace(artist))
+            return Result<SimilarArtists>.ValidationError("Artist name cannot be empty");
+
+        if (limit <= 0 || limit > 1000)
+            return Result<SimilarArtists>.ValidationError("Limit must be between 1 and 1000");
+
+        var result = await _dataProvider.GetSimilarArtistsAsync(artist, limit);
+
+        if (result.IsSuccess && (result.Data?.Artists == null || !result.Data.Artists.Any()))
+        {
+            return Result<SimilarArtists>.DataError($"No similar artists found for '{artist}'");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<TopTags>> GetArtistTopTagsWithResultAsync(string artist, bool autocorrect = true)
+    {
+        if (string.IsNullOrWhiteSpace(artist))
+            return Result<TopTags>.ValidationError("Artist name cannot be empty");
+
+        var result = await _dataProvider.GetArtistTopTagsAsync(artist, autocorrect);
+
+        if (result.IsSuccess && (result.Data?.Tags == null || !result.Data.Tags.Any()))
+        {
+            return Result<TopTags>.DataError($"No tags found for artist '{artist}'");
+        }
+
+        return result;
+    }
+
+    public async Task<Result<ArtistLookupInfo>> GetArtistInfoWithResultAsync(string artist, string username)
+    {
+        if (string.IsNullOrWhiteSpace(artist))
+            return Result<ArtistLookupInfo>.ValidationError("Artist name cannot be empty");
+
+        return await _dataProvider.GetArtistInfoAsync(artist, username);
+    }
+
+    public async Task<Result<TrackLookupInfo>> GetTrackInfoWithResultAsync(string artist, string track, string username)
+    {
+        if (string.IsNullOrWhiteSpace(artist))
+            return Result<TrackLookupInfo>.ValidationError("Artist name cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(track))
+            return Result<TrackLookupInfo>.ValidationError("Track name cannot be empty");
+
+        return await _dataProvider.GetTrackInfoAsync(artist, track, username);
+    }
+
+    public async Task<Result<AlbumLookupInfo>> GetAlbumInfoWithResultAsync(string artist, string album, string username)
+    {
+        if (string.IsNullOrWhiteSpace(artist))
+            return Result<AlbumLookupInfo>.ValidationError("Artist name cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(album))
+            return Result<AlbumLookupInfo>.ValidationError("Album name cannot be empty");
+
+        return await _dataProvider.GetAlbumInfoAsync(artist, album, username);
+    }
+
+    public Task<Result<List<RecommendationResult>>> GetMusicRecommendationsWithResultAsync(string username,
         int analysisLimit = 20,
         int recommendationLimit = 20,
         int filterThreshold = 0,
         int tracksPerArtist = 0,
-        string period = "overall",
+        LastFmPeriod period = LastFmPeriod.Overall,
         bool excludeTags = false)
-    {
-        try
-        {
-            // Validate inputs
-            if (string.IsNullOrWhiteSpace(username))
-                return Result<List<RecommendationResult>>.ValidationError("Username cannot be empty");
-            
-            if (analysisLimit <= 0 || analysisLimit > 200)
-                return Result<List<RecommendationResult>>.ValidationError("Analysis limit must be between 1 and 200");
-            
-            if (recommendationLimit <= 0 || recommendationLimit > 100)
-                return Result<List<RecommendationResult>>.ValidationError("Recommendation limit must be between 1 and 100");
-
-            // Call the existing implementation
-            var recommendations = await GetMusicRecommendationsAsync(username, analysisLimit, recommendationLimit, filterThreshold, tracksPerArtist, period, excludeTags);
-            
-            if (!recommendations.Any())
-                return Result<List<RecommendationResult>>.DataError($"No recommendations found for user '{username}' with current filter settings");
-
-            return Result<List<RecommendationResult>>.Ok(recommendations);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating recommendations for user {Username}", username);
-            return Result<List<RecommendationResult>>.ApiError("Failed to generate recommendations", ex.Message);
-        }
-    }
+        => _recommendationEngine.GetMusicRecommendationsWithResultAsync(username, analysisLimit, recommendationLimit, filterThreshold, tracksPerArtist, period, excludeTags);
 
     public async Task<Result> ValidateUserConfigurationAsync(string? username = null)
     {
@@ -616,10 +534,10 @@ public class LastFmService : ILastFmService
     // Private helper methods
     private async Task<(List<T> items, string totalCount)> ExecuteRangeQueryAsync<T, TResponse>(
         string username,
-        string period,
+        LastFmPeriod period,
         int startIndex,
         int endIndex,
-        Func<string, string, int, int, Task<TResponse?>> apiCall,
+        Func<string, LastFmPeriod, int, int, Task<TResponse?>> apiCall,
         Func<TResponse, List<T>> extractItems,
         Func<TResponse, string> extractTotal)
         where TResponse : class
@@ -674,189 +592,11 @@ public class LastFmService : ILastFmService
     }
 
     /// <summary>
-    /// Applies tag filtering with dynamic candidate expansion to ensure we get the requested number of recommendations
-    /// </summary>
-    private async Task<List<RecommendationResult>> ApplyDynamicTagFilteringAsync(
-        List<RecommendationResult> allCandidates,
-        LfmConfig config,
-        int targetLimit)
-    {
-        var multiplier = 2;
-        const int maxMultiplier = 10; // Safety limit to prevent infinite expansion
-        const int minCandidatesPerMultiplier = 20; // Minimum candidates to try per iteration
-
-        _logger.LogDebug("Starting dynamic tag filtering for {TargetLimit} recommendations from {TotalCandidates} candidates",
-            targetLimit, allCandidates.Count);
-
-        while (multiplier <= maxMultiplier)
-        {
-            // Calculate how many candidates to check this iteration
-            var candidateCount = Math.Max(
-                targetLimit * multiplier,
-                minCandidatesPerMultiplier);
-
-            // Don't exceed available candidates
-            candidateCount = Math.Min(candidateCount, allCandidates.Count);
-
-            var candidatesForFiltering = allCandidates.Take(candidateCount).ToList();
-
-            _logger.LogDebug("Attempt {Multiplier}: Checking {CandidateCount} candidates (multiplier: {MultiplierValue}x)",
-                multiplier / 2 + 1, candidateCount, multiplier);
-
-            // Create a temporary config with increased API budget for this attempt
-            var tempConfig = new LfmConfig
-            {
-                ExcludedTags = config.ExcludedTags,
-                TagFilterThreshold = config.TagFilterThreshold,
-                EnableTagFiltering = config.EnableTagFiltering,
-                MaxTagLookups = Math.Max(config.MaxTagLookups, candidateCount / 2) // Increase budget based on candidates
-            };
-
-            var filteredResults = await ApplyTagFilteringAsync(candidatesForFiltering, tempConfig, targetLimit);
-
-            // If we got enough results, we're done
-            if (filteredResults.Count >= targetLimit)
-            {
-                _logger.LogInformation("Dynamic filtering successful: Got {ResultCount} results after checking {CandidateCount} candidates",
-                    filteredResults.Count, candidateCount);
-                return filteredResults.Take(targetLimit).ToList();
-            }
-
-            // If we've checked all available candidates, break
-            if (candidateCount >= allCandidates.Count)
-            {
-                _logger.LogWarning("Checked all {TotalCandidates} candidates but only found {ResultCount} after filtering. Adding unfiltered candidates to reach target.",
-                    allCandidates.Count, filteredResults.Count);
-
-                // Add unfiltered candidates to reach target
-                var remainingNeeded = targetLimit - filteredResults.Count;
-                var filteredArtistNames = filteredResults.Select(r => r.ArtistName).ToHashSet();
-                var additionalCandidates = allCandidates
-                    .Where(r => !filteredArtistNames.Contains(r.ArtistName))
-                    .Take(remainingNeeded)
-                    .ToList();
-
-                filteredResults.AddRange(additionalCandidates);
-
-                _logger.LogInformation("Final result: {FilteredCount} filtered + {UnfilteredCount} unfiltered = {TotalCount} recommendations",
-                    filteredResults.Count - additionalCandidates.Count, additionalCandidates.Count, filteredResults.Count);
-
-                return filteredResults.Take(targetLimit).ToList();
-            }
-
-            // Increase multiplier for next iteration
-            multiplier += 2; // Try 2x, 4x, 6x, 8x, 10x
-        }
-
-        // Safety fallback - this shouldn't normally be reached
-        _logger.LogWarning("Dynamic filtering reached maximum multiplier ({MaxMultiplier}x). Falling back to unfiltered results.",
-            maxMultiplier);
-
-        return allCandidates.Take(targetLimit).ToList();
-    }
-
-    private async Task<List<RecommendationResult>> ApplyTagFilteringAsync(
-        List<RecommendationResult> candidateRecommendations,
-        LfmConfig config,
-        int targetLimit)
-    {
-        var filteredResults = new List<RecommendationResult>();
-        var excludedResults = new List<(RecommendationResult recommendation, List<string> matchingTags)>();
-        int apiCallsUsed = 0;
-        int candidatesToCheck = Math.Min(candidateRecommendations.Count, targetLimit * 2); // N*2 as specified
-
-        _logger.LogDebug("Starting tag filtering: checking {CandidateCount} candidates, budget: {MaxApiCalls}",
-            candidatesToCheck, config.MaxTagLookups);
-
-        for (int i = 0; i < candidatesToCheck && apiCallsUsed < config.MaxTagLookups; i++)
-        {
-            var candidate = candidateRecommendations[i];
-
-            try
-            {
-                // Apply throttling between API calls
-                if (apiCallsUsed > 0)
-                {
-                    // Throttling now handled by CachedLastFmApiClient
-                }
-
-                var artistTags = await _apiClient.GetArtistTopTagsAsync(candidate.ArtistName, autocorrect: true);
-                apiCallsUsed++;
-
-                if (_tagFilterService.ShouldExcludeArtist(artistTags, config))
-                {
-                    // Find which tags caused the exclusion for verbose output
-                    var matchingTags = new List<string>();
-                    if (artistTags?.Tags != null)
-                    {
-                        matchingTags = artistTags.Tags
-                            .Where(tag => tag.Count >= config.TagFilterThreshold &&
-                                         config.ExcludedTags.Any(excludedTag =>
-                                             string.Equals(excludedTag, tag.Name, StringComparison.OrdinalIgnoreCase)))
-                            .Select(tag => $"{tag.Name}: {tag.Count}")
-                            .ToList();
-                    }
-
-                    excludedResults.Add((candidate, matchingTags));
-                    _logger.LogDebug("Excluded {ArtistName} due to tags: {MatchingTags}",
-                        candidate.ArtistName, string.Join(", ", matchingTags));
-                }
-                else
-                {
-                    filteredResults.Add(candidate);
-
-                    // If we have enough results, we can stop early
-                    if (filteredResults.Count >= targetLimit)
-                    {
-                        break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to get tags for {ArtistName}, including in results", candidate.ArtistName);
-                // On error, include the artist (benefit of the doubt)
-                filteredResults.Add(candidate);
-            }
-        }
-
-        // If we need more results and haven't hit API limit, add remaining unfiltered candidates
-        if (filteredResults.Count < targetLimit && apiCallsUsed < config.MaxTagLookups)
-        {
-            var remainingNeeded = targetLimit - filteredResults.Count;
-            var uncheckedCandidates = candidateRecommendations
-                .Skip(candidatesToCheck)
-                .Take(remainingNeeded)
-                .ToList();
-
-            filteredResults.AddRange(uncheckedCandidates);
-
-            if (uncheckedCandidates.Any())
-            {
-                _logger.LogDebug("Added {UncheckedCount} unfiltered candidates to reach target limit", uncheckedCandidates.Count);
-            }
-        }
-
-        // Log filtering statistics
-        _logger.LogInformation("Tag filtering complete: kept {KeptCount}, excluded {ExcludedCount}, API calls: {ApiCalls}/{Budget}",
-            filteredResults.Count, excludedResults.Count, apiCallsUsed, config.MaxTagLookups);
-
-        // Log verbose details about excluded artists
-        if (excludedResults.Any())
-        {
-            var excludedArtists = string.Join(", ", excludedResults.Select(r => r.recommendation.ArtistName));
-            _logger.LogInformation("Excluded artists by tag filtering: {Artists}", excludedArtists);
-        }
-
-        return filteredResults.Take(targetLimit).ToList();
-    }
-
-    /// <summary>
     /// Generates a mixtape playlist with weighted random sampling from user's listening history
     /// </summary>
     public async Task<List<Track>> GetMixtapeTracksAsync(string username,
         int targetTracks,
-        string? period = null,
+        LastFmPeriod? period = null,
         DateTime? fromDate = null,
         DateTime? toDate = null,
         float bias = 0.3f,
@@ -902,7 +642,7 @@ public class LastFmService : ILastFmService
         else
         {
             // Use existing range function for periods with smart min-plays optimization
-            period ??= "overall";
+            period ??= LastFmPeriod.Overall;
 
             // For mixtape, we want maximum diversity so use the full sample size
             var endIndex = maxSampleSize;
@@ -910,7 +650,7 @@ public class LastFmService : ILastFmService
             _logger.LogDebug("Fetching tracks 1-{EndIndex} for period {Period}", endIndex, period);
 
             // Use existing GetUserTopTracksRangeAsync which handles pagination efficiently
-            var (rangeTracks, totalCount) = await GetUserTopTracksRangeAsync(username, period, 1, endIndex);
+            var (rangeTracks, totalCount) = await GetUserTopTracksRangeAsync(username, period.Value, 1, endIndex);
             allTracks = rangeTracks;
 
             // Apply min-plays cutoff (tracks are already ordered by play count)
@@ -1062,7 +802,8 @@ public class LastFmService : ILastFmService
                 }
 
                 _logger.LogInformation("MIXTAPE TAG FILTER - Checking tags for artist: {ArtistName}", artistName);
-                var artistTags = await _apiClient.GetArtistTopTagsAsync(artistName, autocorrect: true);
+                var tagsResult = await _dataProvider.GetArtistTopTagsAsync(artistName, autocorrect: true);
+                var artistTags = tagsResult.IsSuccess ? tagsResult.Data : null;
                 tagApiCalls++;
 
                 // Use the same tag filter service as recommendations for consistency
@@ -1317,14 +1058,5 @@ public class LastFmService : ILastFmService
                 obj.Name?.ToLowerInvariant(),
                 obj.Artist.Name?.ToLowerInvariant());
         }
-    }
-
-    // Helper class for recommendation processing
-    private class RecommendationData
-    {
-        public SimilarArtist Artist { get; set; } = new();
-        public float TotalSimilarity { get; set; }
-        public int OccurrenceCount { get; set; }
-        public List<string> SourceArtists { get; set; } = new();
     }
 }

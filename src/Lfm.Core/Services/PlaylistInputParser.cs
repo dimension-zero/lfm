@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 
 namespace Lfm.Core.Services;
 

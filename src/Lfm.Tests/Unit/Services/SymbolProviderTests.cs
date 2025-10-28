@@ -1,6 +1,10 @@
-using FluentAssertions;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
+using FluentAssertions;
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Moq;
 
 namespace Lfm.Tests.Unit.Services;

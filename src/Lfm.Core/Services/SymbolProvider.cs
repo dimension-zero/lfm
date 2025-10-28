@@ -1,3 +1,4 @@
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
 using System.Runtime.InteropServices;
 

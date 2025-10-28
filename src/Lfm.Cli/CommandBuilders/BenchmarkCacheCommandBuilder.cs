@@ -1,5 +1,7 @@
 using System.CommandLine;
 using Lfm.Cli.Commands;
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Lfm.Core.Services.Cache;
@@ -37,14 +39,14 @@ public static class BenchmarkCacheCommandBuilder
 
         command.SetHandler(async (string? username, bool skipApi, int iterations, bool deepSearch, int delay) =>
         {
-            var apiClient = serviceProvider.GetRequiredService<ILastFmApiClient>();
+            var dataProvider = serviceProvider.GetRequiredService<IMusicDataProvider>();
             var cacheStorage = serviceProvider.GetRequiredService<ICacheStorage>();
             var keyGenerator = serviceProvider.GetRequiredService<ICacheKeyGenerator>();
             var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
             var logger = serviceProvider.GetRequiredService<ILogger<BenchmarkCacheCommand>>();
 
             var benchmarkCommand = new BenchmarkCacheCommand(
-                apiClient, 
+                dataProvider, 
                 cacheStorage, 
                 keyGenerator, 
                 configManager, 

@@ -1,5 +1,10 @@
-using FluentAssertions;
 using Lfm.Core.Configuration;
+using Lfm.Core.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
+using FluentAssertions;
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Models.Results;
 using Lfm.Core.Services.Cache;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -14,13 +19,15 @@ public class FileCacheStorageTests : IDisposable
     private readonly string _testCacheDirectory;
     private readonly FileCacheStorage _storage;
     private readonly TestCacheDirectoryHelper _cacheHelper;
+    private readonly TestConfigurationManager _configManager;
 
     public FileCacheStorageTests()
     {
         // Create unique test directory for each test run
         _testCacheDirectory = Path.Combine(Path.GetTempPath(), $"lfm-test-cache-{Guid.NewGuid()}");
         _cacheHelper = new TestCacheDirectoryHelper(_testCacheDirectory);
-        _storage = new FileCacheStorage(_cacheHelper, NullLogger<FileCacheStorage>.Instance);
+        _configManager = new TestConfigurationManager();
+        _storage = new FileCacheStorage(_cacheHelper, NullLogger<FileCacheStorage>.Instance, _configManager);
     }
 
     public void Dispose()
@@ -28,7 +35,20 @@ public class FileCacheStorageTests : IDisposable
         // Cleanup test directory after each test
         if (Directory.Exists(_testCacheDirectory))
         {
-            Directory.Delete(_testCacheDirectory, recursive: true);
+            // Retry directory deletion to handle async file operations from cache cleanup
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    Directory.Delete(_testCacheDirectory, recursive: true);
+                    break;
+                }
+                catch (UnauthorizedAccessException) when (i < 2)
+                {
+                    // Cache's fire-and-forget cleanup may still be running
+                    Thread.Sleep(100);
+                }
+            }
         }
     }
 
@@ -194,6 +214,78 @@ public class FileCacheStorageTests : IDisposable
         validExists.Should().BeTrue("valid entry should remain");
         expiredExists.Should().BeFalse("expired entry should be removed");
     }
+
+    [Fact]
+    public async Task EnforceCacheSizeLimit_EvictsOldestEntriesWhenOverLimit()
+    {
+        // Arrange - Create a custom config manager with a small cache size limit (1 KB)
+        var smallCacheConfig = new TestConfigurationManager(maxCacheSizeMB: 0.001); // 1 KB limit
+        var storage = new FileCacheStorage(_cacheHelper, NullLogger<FileCacheStorage>.Instance, smallCacheConfig);
+
+        // Store 3 entries (each ~50 bytes, total ~150 bytes > 1 KB limit)
+        await storage.StoreAsync("entry1", "{\"data\":\"" + new string('a', 500) + "\"}", expiryMinutes: 60);
+        await Task.Delay(100); // Ensure different LastAccessedAt times
+
+        await storage.StoreAsync("entry2", "{\"data\":\"" + new string('b', 500) + "\"}", expiryMinutes: 60);
+        await Task.Delay(100);
+
+        await storage.StoreAsync("entry3", "{\"data\":\"" + new string('c', 500) + "\"}", expiryMinutes: 60);
+
+        // Act - Run cleanup which should trigger LRU eviction
+        var removedCount = await storage.CleanupAsync();
+
+        // Assert - Oldest entries (entry1, entry2) should be evicted, entry3 should remain
+        removedCount.Should().BeGreaterThan(0, "should have evicted entries to enforce size limit");
+
+        var stats = await storage.GetStatisticsAsync();
+        stats.TotalSizeBytes.Should().BeLessThanOrEqualTo(1024, "cache size should be under 1 KB limit");
+    }
+
+    [Fact]
+    public async Task RetrieveAsync_UpdatesLastAccessedTime()
+    {
+        // Arrange
+        await _storage.StoreAsync("test-key", "{\"test\":\"data\"}", expiryMinutes: 60);
+        var originalTime = DateTime.UtcNow;
+
+        await Task.Delay(200); // Wait to ensure LastAccessedAt will be different
+
+        // Act - Retrieve the entry (should update LastAccessedAt)
+        var result = await _storage.RetrieveAsync("test-key");
+
+        // Assert
+        result.Should().NotBeNull();
+
+        // Read the metadata directly to verify LastAccessedAt was updated
+        var metaPath = Path.Combine(_testCacheDirectory, "test-key.meta");
+        var metaJson = await File.ReadAllTextAsync(metaPath);
+        metaJson.Should().Contain("lastAccessedAt", "metadata should include lastAccessedAt field");
+    }
+
+    [Fact]
+    public async Task LRUEviction_EnforcesCacheSizeLimitCorrectly()
+    {
+        // Arrange - Create storage with very small cache limit
+        var tinyConfig = new TestConfigurationManager(maxCacheSizeMB: 0.001); // 1 KB
+        var storage = new FileCacheStorage(_cacheHelper, NullLogger<FileCacheStorage>.Instance, tinyConfig);
+
+        // Create several small entries that collectively exceed the limit
+        for (int i = 1; i <= 10; i++)
+        {
+            await storage.StoreAsync($"entry{i}", $"{{\"data\":{i}}}", expiryMinutes: 60);
+            await Task.Delay(10); // Ensure different LastAccessedAt times
+        }
+
+        // Act - Trigger cleanup which should evict oldest entries
+        var removedCount = await storage.CleanupAsync();
+
+        // Assert - Should have evicted some entries and now be under the limit
+        removedCount.Should().BeGreaterThan(0, "should have evicted entries to enforce size limit");
+
+        var stats = await storage.GetStatisticsAsync();
+        stats.TotalSizeBytes.Should().BeLessThanOrEqualTo(1024, "cache size should be under 1KB limit after cleanup");
+        stats.TotalEntries.Should().BeLessThan(10, "some entries should have been evicted");
+    }
 }
 
 /// <summary>
@@ -222,4 +314,31 @@ internal class TestCacheDirectoryHelper : ICacheDirectoryHelper
     }
 
     public bool CacheDirectoryExists() => Directory.Exists(_cacheDirectory);
+}
+
+/// <summary>
+/// Test helper for configuration manager
+/// </summary>
+internal class TestConfigurationManager : IConfigurationManager
+{
+    private readonly LfmConfig _config;
+
+    public TestConfigurationManager(double maxCacheSizeMB = 100)
+    {
+        _config = new LfmConfig
+        {
+            MaxCacheSizeMB = (int)maxCacheSizeMB,
+            CacheExpiryMinutes = 10,
+            ApiKey = "test-key",
+            DefaultUsername = "test-user"
+        };
+    }
+
+    public Task<LfmConfig> LoadAsync() => Task.FromResult(_config);
+
+    public Task<Result<LfmConfig>> LoadWithValidationAsync() => Task.FromResult(Result<LfmConfig>.Ok(_config));
+
+    public Task SaveAsync(LfmConfig config) => Task.CompletedTask;
+
+    public string GetConfigPath() => Path.Combine(Path.GetTempPath(), "test-config.json");
 }

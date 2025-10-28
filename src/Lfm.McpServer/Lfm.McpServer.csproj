@@ -15,9 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Lfm.Shared\Lfm.Shared.csproj" />
     <ProjectReference Include="..\Lfm.Core\Lfm.Core.csproj" />
     <ProjectReference Include="..\Lfm.Schema\Lfm.Schema.csproj" />
-    <ProjectReference Include="..\Lfm.Transformation\Lfm.Transformation.csproj" />
   </ItemGroup>
 
 </Project>

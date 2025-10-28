@@ -1,5 +1,8 @@
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Configuration;
+using Lfm.Core.Configuration;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
+using Lfm.Shared.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Lfm.Core.Services;
@@ -25,23 +28,28 @@ public class LastFmDataProvider : IMusicDataProvider
     public bool SupportsSimilarArtists => true;
     public bool SupportsLookup => true;
 
+    /// <summary>
+    /// Exposes the underlying API client for advanced scenarios (caching configuration, timing)
+    /// </summary>
+    public ILastFmApiClient ApiClient => _apiClient;
+
     // Core query methods - delegate directly to API client
 
-    public Task<Result<TopArtists>> GetTopArtistsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public Task<Result<TopArtists>> GetTopArtistsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         _logger.LogDebug("GetTopArtistsAsync via Last.fm API: user={Username}, period={Period}, limit={Limit}, page={Page}",
             username, period, limit, page);
         return _apiClient.GetTopArtistsWithResultAsync(username, period, limit, page);
     }
 
-    public Task<Result<TopTracks>> GetTopTracksAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public Task<Result<TopTracks>> GetTopTracksAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         _logger.LogDebug("GetTopTracksAsync via Last.fm API: user={Username}, period={Period}, limit={Limit}, page={Page}",
             username, period, limit, page);
         return _apiClient.GetTopTracksWithResultAsync(username, period, limit, page);
     }
 
-    public Task<Result<TopAlbums>> GetTopAlbumsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public Task<Result<TopAlbums>> GetTopAlbumsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         _logger.LogDebug("GetTopAlbumsAsync via Last.fm API: user={Username}, period={Period}, limit={Limit}, page={Page}",
             username, period, limit, page);

@@ -1,7 +1,9 @@
 using Lfm.Cli.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -15,14 +17,14 @@ public class RecommendationsCommand : BaseCommand
     private readonly ISpotifyStreamingService _spotifyStreamingService;
 
     public RecommendationsCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILastFmService lastFmService,
         IDisplayService displayService,
         ISpotifyStreamingService spotifyStreamingService,
         ILogger<RecommendationsCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _lastFmService = lastFmService ?? throw new ArgumentNullException(nameof(lastFmService));
         _displayService = displayService ?? throw new ArgumentNullException(nameof(displayService));
@@ -102,7 +104,7 @@ public class RecommendationsCommand : BaseCommand
                 }
 
                 // Use service layer for range query
-                var (rangeArtists, totalCount) = await _lastFmService.GetUserTopArtistsRangeAsync(user, resolvedPeriod, startIndex, endIndex);
+                var (rangeArtists, totalCount) = await _lastFmService.GetUserTopArtistsRangeAsync(user, LastFmPeriodExtensions.ParsePeriod(resolvedPeriod), startIndex, endIndex);
                 
                 if (!rangeArtists.Any())
                 {
@@ -144,7 +146,7 @@ public class RecommendationsCommand : BaseCommand
                     recommendationLimit: recommendationLimit,
                     filterThreshold: filter,
                     tracksPerArtist: tracksPerArtist,
-                    period: resolvedPeriod,
+                    period: LastFmPeriodExtensions.ParsePeriod(resolvedPeriod),
                     excludeTags: excludeTags);
             }
 

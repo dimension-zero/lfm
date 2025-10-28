@@ -1,0 +1,77 @@
+[
+  {
+    "header": "YouTube Music",
+    "title": "Bohemian Rhapsody",
+    "titleUrl": "https://www.youtube.com/watch?v=fJ9rUzIMcZQ",
+    "time": "2024-01-15T14:30:00.000Z",
+    "products": ["YouTube Music"],
+    "activityControls": ["YouTube watch history"],
+    "subtitles": [
+      {
+        "name": "Queen",
+        "url": "https://www.youtube.com/channel/UCiMhD4jzUqG-IgPzUmmytRQ"
+      }
+    ],
+    "details": []
+  },
+  {
+    "header": "YouTube Music",
+    "title": "We Will Rock You",
+    "titleUrl": "https://www.youtube.com/watch?v=-tJYN-eG1zk",
+    "time": "2024-01-15T14:36:00.000Z",
+    "products": ["YouTube Music"],
+    "activityControls": ["YouTube watch history"],
+    "subtitles": [
+      {
+        "name": "Queen",
+        "url": "https://www.youtube.com/channel/UCiMhD4jzUqG-IgPzUmmytRQ"
+      }
+    ],
+    "details": []
+  },
+  {
+    "header": "Watched a video",
+    "title": "Some Random Video",
+    "titleUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    "time": "2024-01-15T14:40:00.000Z",
+    "products": ["YouTube"],
+    "activityControls": ["YouTube watch history"],
+    "subtitles": [
+      {
+        "name": "Random Channel",
+        "url": "https://www.youtube.com/channel/UCRandomChannel"
+      }
+    ],
+    "details": []
+  },
+  {
+    "header": "YouTube Music",
+    "title": "Killer Queen",
+    "titleUrl": "https://www.youtube.com/watch?v=2ZBtPf7FOoM",
+    "time": "2024-01-15T14:45:00.000Z",
+    "products": ["YouTube Music"],
+    "activityControls": ["YouTube watch history"],
+    "subtitles": [
+      {
+        "name": "Queen",
+        "url": "https://www.youtube.com/channel/UCiMhD4jzUqG-IgPzUmmytRQ"
+      }
+    ],
+    "details": []
+  },
+  {
+    "header": "YouTube Music",
+    "title": "Somebody To Love",
+    "titleUrl": "https://www.youtube.com/watch?v=kijpcUv-b8M",
+    "time": "2024-01-15T14:50:00.000Z",
+    "products": ["YouTube Music"],
+    "activityControls": ["YouTube watch history"],
+    "subtitles": [
+      {
+        "name": "Queen",
+        "url": "https://www.youtube.com/channel/UCiMhD4jzUqG-IgPzUmmytRQ"
+      }
+    ],
+    "details": []
+  }
+]

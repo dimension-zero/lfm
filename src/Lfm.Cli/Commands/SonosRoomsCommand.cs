@@ -1,4 +1,5 @@
 using Lfm.Core.Services;
+using Lfm.Shared.Services;
 using Lfm.Sonos;
 using Microsoft.Extensions.Logging;
 

@@ -1,5 +1,9 @@
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Configuration;
+using Lfm.Core.Configuration;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
+using Lfm.Shared.Services;
+using Lfm.Core.Services.Enrichment;
 
 namespace Lfm.Core.Services.LocalFiles;
 
@@ -11,11 +15,13 @@ public class LocalFileDataProvider : IMusicDataProvider
 {
     private readonly List<ILocalFileParser> _parsers;
     private readonly LocalFileAggregator _aggregator;
+    private readonly AlbumEnrichmentService _enrichmentService;
     private List<PlayEvent>? _cachedEvents;
     private string? _cachedFilePath;
 
-    public LocalFileDataProvider()
+    public LocalFileDataProvider(AlbumEnrichmentService enrichmentService)
     {
+        _enrichmentService = enrichmentService;
         _parsers = new List<ILocalFileParser>
         {
             new SpotifyJsonParser(),
@@ -59,28 +65,42 @@ public class LocalFileDataProvider : IMusicDataProvider
             return Result<List<PlayEvent>>.DataError(
                 $"No parser found for file: {filePath}. Supported formats: Spotify JSON, YouTube Music JSON/CSV");
 
-        // Parse file
-        var parseResult = await parser.ParseAsync(filePath, startDate, endDate);
-
-        if (!parseResult.IsSuccess)
-            return parseResult;
-
-        // Cache events (without date filtering for future queries)
+        // Parse file (all events, no date filtering)
         var allEventsResult = await parser.ParseAsync(filePath);
-        if (allEventsResult.IsSuccess)
+
+        if (!allEventsResult.IsSuccess)
+            return Result<List<PlayEvent>>.DataError(allEventsResult.ErrorMessage ?? "Parse failed");
+
+        // Apply enrichment to all events
+        var enrichedResult = await _enrichmentService.EnrichAlbumsAsync(allEventsResult.Value!);
+
+        if (!enrichedResult.IsSuccess)
         {
-            _cachedEvents = allEventsResult.Value;
-            _cachedFilePath = filePath;
+            // If enrichment is mandatory and fails, return error
+            return Result<List<PlayEvent>>.DataError(enrichedResult.ErrorMessage ?? "Enrichment failed");
         }
 
-        return parseResult;
+        // Cache enriched events
+        _cachedEvents = enrichedResult.Value!;
+        _cachedFilePath = filePath;
+
+        // Apply date filtering
+        var filteredEvents = _cachedEvents!.AsEnumerable();
+
+        if (startDate.HasValue)
+            filteredEvents = filteredEvents.Where(e => e.PlayedAt >= startDate.Value);
+
+        if (endDate.HasValue)
+            filteredEvents = filteredEvents.Where(e => e.PlayedAt <= endDate.Value);
+
+        return Result<List<PlayEvent>>.Ok(filteredEvents.ToList());
     }
 
     // Core query methods
 
     public async Task<Result<TopArtists>> GetTopArtistsAsync(
         string username,
-        string period = "overall",
+        LastFmPeriod period = LastFmPeriod.Overall,
         int limit = 10,
         int page = 1)
     {
@@ -92,7 +112,7 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<TopArtists>.DataError(eventsResult.ErrorMessage!);
 
-        var artistList = _aggregator.AggregateTopArtists(eventsResult.Value, limit * page);
+        var artistList = _aggregator.AggregateTopArtists(eventsResult.Value!, limit * page);
 
         // Apply pagination
         if (page > 1)
@@ -131,7 +151,7 @@ public class LocalFileDataProvider : IMusicDataProvider
 
     public async Task<Result<TopTracks>> GetTopTracksAsync(
         string username,
-        string period = "overall",
+        LastFmPeriod period = LastFmPeriod.Overall,
         int limit = 10,
         int page = 1)
     {
@@ -143,7 +163,7 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<TopTracks>.DataError(eventsResult.ErrorMessage!);
 
-        var trackList = _aggregator.AggregateTopTracks(eventsResult.Value, limit * page);
+        var trackList = _aggregator.AggregateTopTracks(eventsResult.Value!, limit * page);
 
         // Apply pagination
         if (page > 1)
@@ -188,7 +208,7 @@ public class LocalFileDataProvider : IMusicDataProvider
 
     public async Task<Result<TopAlbums>> GetTopAlbumsAsync(
         string username,
-        string period = "overall",
+        LastFmPeriod period = LastFmPeriod.Overall,
         int limit = 10,
         int page = 1)
     {
@@ -200,7 +220,7 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<TopAlbums>.DataError(eventsResult.ErrorMessage!);
 
-        var albumList = _aggregator.AggregateTopAlbums(eventsResult.Value, limit * page);
+        var albumList = _aggregator.AggregateTopAlbums(eventsResult.Value!, limit * page);
 
         // Apply pagination
         if (page > 1)
@@ -259,7 +279,7 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<TopArtists>.DataError(eventsResult.ErrorMessage!);
 
-        var artistList = _aggregator.AggregateTopArtists(eventsResult.Value, limit);
+        var artistList = _aggregator.AggregateTopArtists(eventsResult.Value!, limit);
 
         // Convert to TopArtists wrapper
         var artists = artistList.Select((a, index) => new Artist
@@ -299,7 +319,7 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<TopTracks>.DataError(eventsResult.ErrorMessage!);
 
-        var trackList = _aggregator.AggregateTopTracks(eventsResult.Value, limit);
+        var trackList = _aggregator.AggregateTopTracks(eventsResult.Value!, limit);
 
         // Convert to TopTracks wrapper
         var tracks = trackList.Select((t, index) => new Track
@@ -345,7 +365,7 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<TopAlbums>.DataError(eventsResult.ErrorMessage!);
 
-        var albumList = _aggregator.AggregateTopAlbums(eventsResult.Value, limit);
+        var albumList = _aggregator.AggregateTopAlbums(eventsResult.Value!, limit);
 
         // Convert to TopAlbums wrapper
         var albums = albumList.Select((a, index) => new Album
@@ -393,7 +413,7 @@ public class LocalFileDataProvider : IMusicDataProvider
             return Result<RecentTracks>.DataError(eventsResult.ErrorMessage!);
 
         // Sort by date descending and paginate
-        var events = eventsResult.Value
+        var events = eventsResult.Value!
             .OrderByDescending(e => e.PlayedAt)
             .ToList();
 
@@ -441,19 +461,19 @@ public class LocalFileDataProvider : IMusicDataProvider
 
     // Artist-specific methods
 
-    public async Task<Result<TopTracks>> GetArtistTopTracksAsync(string artist, int limit = 10)
+    public Task<Result<TopTracks>> GetArtistTopTracksAsync(string artist, int limit = 10)
     {
         // Note: Local files need a file path. This method doesn't have username parameter in interface.
         // We'll return a failure message indicating this limitation.
-        return Result<TopTracks>.DataError(
-            "Artist queries require a file path. Use GetTopTracksAsync or GetTopTracksForDateRangeAsync with a file path.");
+        return Task.FromResult(Result<TopTracks>.DataError(
+            "Artist queries require a file path. Use GetTopTracksAsync or GetTopTracksForDateRangeAsync with a file path."));
     }
 
-    public async Task<Result<TopAlbums>> GetArtistTopAlbumsAsync(string artist, int limit = 10)
+    public Task<Result<TopAlbums>> GetArtistTopAlbumsAsync(string artist, int limit = 10)
     {
         // Note: Local files need a file path. This method doesn't have username parameter in interface.
-        return Result<TopAlbums>.DataError(
-            "Artist queries require a file path. Use GetTopAlbumsAsync or GetTopAlbumsForDateRangeAsync with a file path.");
+        return Task.FromResult(Result<TopAlbums>.DataError(
+            "Artist queries require a file path. Use GetTopAlbumsAsync or GetTopAlbumsForDateRangeAsync with a file path."));
     }
 
     public Task<Result<SimilarArtists>> GetSimilarArtistsAsync(string artist, int limit = 50)
@@ -480,7 +500,7 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<ArtistLookupInfo>.DataError(eventsResult.ErrorMessage!);
 
-        var playCount = _aggregator.GetArtistPlayCount(eventsResult.Value, artist);
+        var playCount = _aggregator.GetArtistPlayCount(eventsResult.Value!, artist);
 
         if (playCount == 0)
             return Result<ArtistLookupInfo>.DataError($"Artist not found: {artist}");
@@ -515,12 +535,12 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<TrackLookupInfo>.DataError(eventsResult.ErrorMessage!);
 
-        var playCount = _aggregator.GetTrackPlayCount(eventsResult.Value, artist, track);
+        var playCount = _aggregator.GetTrackPlayCount(eventsResult.Value!, artist, track);
 
         if (playCount == 0)
             return Result<TrackLookupInfo>.DataError($"Track not found: {artist} - {track}");
 
-        var trackEvent = eventsResult.Value
+        var trackEvent = eventsResult.Value!
             .FirstOrDefault(e => e.Artist.Equals(artist, StringComparison.OrdinalIgnoreCase) &&
                                  e.Track.Equals(track, StringComparison.OrdinalIgnoreCase));
 
@@ -567,12 +587,12 @@ public class LocalFileDataProvider : IMusicDataProvider
         if (!eventsResult.IsSuccess)
             return Result<AlbumLookupInfo>.DataError(eventsResult.ErrorMessage!);
 
-        var playCount = _aggregator.GetAlbumPlayCount(eventsResult.Value, artist, album);
+        var playCount = _aggregator.GetAlbumPlayCount(eventsResult.Value!, artist, album);
 
         if (playCount == 0)
             return Result<AlbumLookupInfo>.DataError($"Album not found: {artist} - {album}");
 
-        var albumEvent = eventsResult.Value
+        var albumEvent = eventsResult.Value!
             .FirstOrDefault(e => e.Artist.Equals(artist, StringComparison.OrdinalIgnoreCase) &&
                                  e.Album != null &&
                                  e.Album.Equals(album, StringComparison.OrdinalIgnoreCase));

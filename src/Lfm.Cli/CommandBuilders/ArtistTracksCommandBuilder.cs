@@ -1,8 +1,8 @@
 using System.CommandLine;
 using Lfm.Cli.Commands;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
-using static Lfm.Core.Configuration.SearchConstants;
+using static Lfm.Shared.Configuration.SearchConstants;
 
 namespace Lfm.Cli.CommandBuilders;
 

@@ -49,9 +49,3 @@ public interface ISonosStreamer
     /// </summary>
     Task ValidateRoomAsync(string roomName);
 }
-
-public enum SkipDirection
-{
-    Next,
-    Previous
-}

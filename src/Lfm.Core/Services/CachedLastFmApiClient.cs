@@ -1,8 +1,9 @@
 using System.Diagnostics;
 using System.Text.Json;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
 using Lfm.Core.Services.Cache;
 using Microsoft.Extensions.Logging;
 
@@ -54,10 +55,10 @@ public class CachedLastFmApiClient : ILastFmApiClient
         _defaultCacheExpiryMinutes = defaultCacheExpiryMinutes;
     }
 
-    public async Task<TopArtists?> GetTopArtistsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopArtists?> GetTopArtistsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
-        var cacheKey = _keyGenerator.ForTopArtists(username, period, limit, page);
-        
+        var cacheKey = _keyGenerator.ForTopArtists(username, period.ToApiString(), limit, page);
+
         return await GetWithCacheAsync<TopArtists>(
             cacheKey,
             async () => await _innerClient.GetTopArtistsAsync(username, period, limit, page),
@@ -65,10 +66,10 @@ public class CachedLastFmApiClient : ILastFmApiClient
             username, period, limit, page);
     }
 
-    public async Task<TopTracks?> GetTopTracksAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopTracks?> GetTopTracksAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
-        var cacheKey = _keyGenerator.ForTopTracks(username, period, limit, page);
-        
+        var cacheKey = _keyGenerator.ForTopTracks(username, period.ToApiString(), limit, page);
+
         return await GetWithCacheAsync<TopTracks>(
             cacheKey,
             async () => await _innerClient.GetTopTracksAsync(username, period, limit, page),
@@ -76,10 +77,10 @@ public class CachedLastFmApiClient : ILastFmApiClient
             username, period, limit, page);
     }
 
-    public async Task<TopAlbums?> GetTopAlbumsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopAlbums?> GetTopAlbumsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
-        var cacheKey = _keyGenerator.ForTopAlbums(username, period, limit, page);
-        
+        var cacheKey = _keyGenerator.ForTopAlbums(username, period.ToApiString(), limit, page);
+
         return await GetWithCacheAsync<TopAlbums>(
             cacheKey,
             async () => await _innerClient.GetTopAlbumsAsync(username, period, limit, page),
@@ -598,10 +599,10 @@ public class CachedLastFmApiClient : ILastFmApiClient
     }
 
     // New Result-based methods for better error handling
-    public async Task<Result<TopArtists>> GetTopArtistsWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopArtists>> GetTopArtistsWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
-        var cacheKey = _keyGenerator.ForTopArtists(username, period, limit, page);
-        
+        var cacheKey = _keyGenerator.ForTopArtists(username, period.ToApiString(), limit, page);
+
         return await GetWithCacheResultAsync<TopArtists>(
             cacheKey,
             async () => await _innerClient.GetTopArtistsWithResultAsync(username, period, limit, page),
@@ -609,10 +610,10 @@ public class CachedLastFmApiClient : ILastFmApiClient
             username, period, limit, page);
     }
 
-    public async Task<Result<TopTracks>> GetTopTracksWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopTracks>> GetTopTracksWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
-        var cacheKey = _keyGenerator.ForTopTracks(username, period, limit, page);
-        
+        var cacheKey = _keyGenerator.ForTopTracks(username, period.ToApiString(), limit, page);
+
         return await GetWithCacheResultAsync<TopTracks>(
             cacheKey,
             async () => await _innerClient.GetTopTracksWithResultAsync(username, period, limit, page),
@@ -620,10 +621,10 @@ public class CachedLastFmApiClient : ILastFmApiClient
             username, period, limit, page);
     }
 
-    public async Task<Result<TopAlbums>> GetTopAlbumsWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopAlbums>> GetTopAlbumsWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
-        var cacheKey = _keyGenerator.ForTopAlbums(username, period, limit, page);
-        
+        var cacheKey = _keyGenerator.ForTopAlbums(username, period.ToApiString(), limit, page);
+
         return await GetWithCacheResultAsync<TopAlbums>(
             cacheKey,
             async () => await _innerClient.GetTopAlbumsWithResultAsync(username, period, limit, page),

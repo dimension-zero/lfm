@@ -1,7 +1,12 @@
-using FluentAssertions;
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Core.Configuration;
 using Lfm.Core.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
+using FluentAssertions;
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
+using Lfm.Shared.Services;
 using Lfm.McpServer.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -43,11 +48,11 @@ public class LastFmMcpClientTests
         };
 
         _mockApiClient
-            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopArtists>.Ok(apiResponse));
 
         // Act
-        var result = await _mcpClient.GetTopArtistsAsync("testuser", "overall", 10);
+        var result = await _mcpClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10);
 
         // Assert
         result.Success.Should().BeTrue();
@@ -84,11 +89,11 @@ public class LastFmMcpClientTests
         };
 
         _mockApiClient
-            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopTracks>.Ok(apiResponse));
 
         // Act
-        var result = await _mcpClient.GetTopTracksAsync("testuser", "overall", 10);
+        var result = await _mcpClient.GetTopTracksAsync("testuser", LastFmPeriod.Overall, 10);
 
         // Assert
         result.Success.Should().BeTrue();
@@ -125,11 +130,11 @@ public class LastFmMcpClientTests
         };
 
         _mockApiClient
-            .Setup(c => c.GetTopAlbumsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopAlbumsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopAlbums>.Ok(apiResponse));
 
         // Act
-        var result = await _mcpClient.GetTopAlbumsAsync("testuser", "overall", 10);
+        var result = await _mcpClient.GetTopAlbumsAsync("testuser", LastFmPeriod.Overall, 10);
 
         // Assert
         result.Success.Should().BeTrue();
@@ -152,11 +157,11 @@ public class LastFmMcpClientTests
         var error = new ErrorResult(ErrorType.ApiError, "API timeout");
 
         _mockApiClient
-            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopArtists>.Fail(error));
 
         // Act
-        var result = await _mcpClient.GetTopArtistsAsync("testuser", "overall", 10);
+        var result = await _mcpClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -171,11 +176,11 @@ public class LastFmMcpClientTests
         var error = new ErrorResult(ErrorType.DataError, "User not found");
 
         _mockApiClient
-            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopTracks>.Fail(error));
 
         // Act
-        var result = await _mcpClient.GetTopTracksAsync("testuser", "overall", 10);
+        var result = await _mcpClient.GetTopTracksAsync("testuser", LastFmPeriod.Overall, 10);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -190,11 +195,11 @@ public class LastFmMcpClientTests
         var error = new ErrorResult(ErrorType.ConfigurationError, "Configuration error");
 
         _mockApiClient
-            .Setup(c => c.GetTopAlbumsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopAlbumsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopAlbums>.Fail(error));
 
         // Act
-        var result = await _mcpClient.GetTopAlbumsAsync("testuser", "overall", 10);
+        var result = await _mcpClient.GetTopAlbumsAsync("testuser", LastFmPeriod.Overall, 10);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -217,11 +222,11 @@ public class LastFmMcpClientTests
         };
 
         _mockApiClient
-            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopArtists>.Ok(apiResponse));
 
         // Act
-        var result = await _mcpClient.GetTopArtistsAsync("testuser", "overall", 3);
+        var result = await _mcpClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 3);
 
         // Assert
         result.Success.Should().BeTrue();
@@ -250,11 +255,11 @@ public class LastFmMcpClientTests
         };
 
         _mockApiClient
-            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopTracks>.Ok(apiResponse));
 
         // Act
-        var result = await _mcpClient.GetTopTracksAsync("testuser", "overall", 10);
+        var result = await _mcpClient.GetTopTracksAsync("testuser", LastFmPeriod.Overall, 10);
 
         // Assert
         result.Success.Should().BeTrue();
@@ -271,11 +276,11 @@ public class LastFmMcpClientTests
         };
 
         _mockApiClient
-            .Setup(c => c.GetTopAlbumsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopAlbumsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(Result<TopAlbums>.Ok(apiResponse));
 
         // Act
-        var result = await _mcpClient.GetTopAlbumsAsync("testuser", "overall", 10);
+        var result = await _mcpClient.GetTopAlbumsAsync("testuser", LastFmPeriod.Overall, 10);
 
         // Assert
         result.Success.Should().BeTrue();

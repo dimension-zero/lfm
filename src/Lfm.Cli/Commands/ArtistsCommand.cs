@@ -1,5 +1,7 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -12,13 +14,13 @@ public class ArtistsCommand : BaseCommand
     private readonly IDisplayService _displayService;
 
     public ArtistsCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILastFmService lastFmService,
         IDisplayService displayService,
         ILogger<ArtistsCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _lastFmService = lastFmService ?? throw new ArgumentNullException(nameof(lastFmService));
         _displayService = displayService ?? throw new ArgumentNullException(nameof(displayService));
@@ -63,7 +65,7 @@ public class ArtistsCommand : BaseCommand
                 }
 
                 // Use service layer for range query
-                var (rangeArtists, totalCount) = await _lastFmService.GetUserTopArtistsRangeAsync(user, resolvedPeriod, startIndex, endIndex);
+                var (rangeArtists, totalCount) = await _lastFmService.GetUserTopArtistsRangeAsync(user, LastFmPeriodExtensions.ParsePeriod(resolvedPeriod), startIndex, endIndex);
                 
                 if (!rangeArtists.Any())
                 {
@@ -117,7 +119,7 @@ public class ArtistsCommand : BaseCommand
             }
             else
             {
-                result = await _lastFmService.GetUserTopArtistsAsync(user, resolvedPeriod, limit);
+                result = await _lastFmService.GetUserTopArtistsAsync(user, LastFmPeriodExtensions.ParsePeriod(resolvedPeriod), limit);
             }
 
             if (result?.Artists == null || !result.Artists.Any())

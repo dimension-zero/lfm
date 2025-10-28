@@ -1,5 +1,7 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Lfm.Core.Services;
 using Lfm.Spotify;
 using Lfm.Sonos;
@@ -17,13 +19,13 @@ public class PlayCommand : BaseCommand
     private readonly ISonosStreamer _sonosStreamer;
 
     public PlayCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILogger<PlayCommand> logger,
         ISymbolProvider symbolProvider,
         IPlaylistStreamer spotifyStreamer,
         ISonosStreamer sonosStreamer)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _spotifyStreamer = spotifyStreamer ?? throw new ArgumentNullException(nameof(spotifyStreamer));
         _sonosStreamer = sonosStreamer ?? throw new ArgumentNullException(nameof(sonosStreamer));

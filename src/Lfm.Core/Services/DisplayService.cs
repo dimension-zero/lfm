@@ -1,6 +1,6 @@
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
-using static Lfm.Core.Configuration.SearchConstants;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
+using static Lfm.Shared.Configuration.SearchConstants;
 
 namespace Lfm.Core.Services;
 

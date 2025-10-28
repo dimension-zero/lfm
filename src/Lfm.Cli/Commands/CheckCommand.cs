@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -11,11 +13,11 @@ namespace Lfm.Cli.Commands;
 public class CheckCommand : BaseCommand
 {
     public CheckCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILogger<CheckCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
     }
 
@@ -38,7 +40,7 @@ public class CheckCommand : BaseCommand
         {
             if (verbose) _logger.LogInformation("Checking listening history for artist: {Artist}", artist);
 
-            var result = await _apiClient.GetArtistInfoWithResultAsync(artist, user);
+            var result = await _dataProvider.GetArtistInfoAsync(artist, user);
 
             stopwatch?.Stop();
 
@@ -105,7 +107,7 @@ public class CheckCommand : BaseCommand
         {
             if (verbose) _logger.LogInformation("Checking listening history for track: {Artist} - {Track}", artist, track);
 
-            var result = await _apiClient.GetTrackInfoWithResultAsync(artist, track, user);
+            var result = await _dataProvider.GetTrackInfoAsync(artist, track, user);
 
             // If 0 plays and track has apostrophe, retry with smart quote variants
             var userPlaycount = result.Data?.Track.GetUserPlaycount() ?? 0;
@@ -118,7 +120,7 @@ public class CheckCommand : BaseCommand
                 {
                     // Try left quote variant
                     var leftQuoteVariant = track.Replace('\'', '\u2018');
-                    var retryResult = await _apiClient.GetTrackInfoWithResultAsync(artist, leftQuoteVariant, user);
+                    var retryResult = await _dataProvider.GetTrackInfoAsync(artist, leftQuoteVariant, user);
                     if (retryResult.Success && retryResult.Data.Track.GetUserPlaycount() > 0)
                     {
                         result = retryResult;
@@ -127,7 +129,7 @@ public class CheckCommand : BaseCommand
                     {
                         // Try right quote variant
                         var rightQuoteVariant = track.Replace('\'', '\u2019');
-                        retryResult = await _apiClient.GetTrackInfoWithResultAsync(artist, rightQuoteVariant, user);
+                        retryResult = await _dataProvider.GetTrackInfoAsync(artist, rightQuoteVariant, user);
                         if (retryResult.Success && retryResult.Data.Track.GetUserPlaycount() > 0)
                         {
                             result = retryResult;
@@ -218,14 +220,14 @@ public class CheckCommand : BaseCommand
                 _logger.LogInformation("Checking listening history for album: {Artist} - {Album}", artist, album);
 
             // Get album info
-            var result = await _apiClient.GetAlbumInfoWithResultAsync(artist, album, user);
+            var result = await _dataProvider.GetAlbumInfoAsync(artist, album, user);
 
             // If failed/0 plays and album has apostrophe, retry with smart quote variants
             if ((!result.Success || result.Data.Album.GetUserPlaycount() == 0) && album.Contains('\''))
             {
                 // Try LEFT SINGLE QUOTATION MARK (U+2018)
                 var leftQuoteVariant = album.Replace('\'', '\u2018');
-                var retryResult = await _apiClient.GetAlbumInfoWithResultAsync(artist, leftQuoteVariant, user);
+                var retryResult = await _dataProvider.GetAlbumInfoAsync(artist, leftQuoteVariant, user);
                 if (retryResult.Success && retryResult.Data.Album.GetUserPlaycount() > 0)
                 {
                     result = retryResult;
@@ -234,7 +236,7 @@ public class CheckCommand : BaseCommand
                 {
                     // Try RIGHT SINGLE QUOTATION MARK (U+2019)
                     var rightQuoteVariant = album.Replace('\'', '\u2019');
-                    retryResult = await _apiClient.GetAlbumInfoWithResultAsync(artist, rightQuoteVariant, user);
+                    retryResult = await _dataProvider.GetAlbumInfoAsync(artist, rightQuoteVariant, user);
                     if (retryResult.Success && retryResult.Data.Album.GetUserPlaycount() > 0)
                     {
                         result = retryResult;
@@ -302,7 +304,7 @@ public class CheckCommand : BaseCommand
     }
 
     private async Task<List<TrackPlayInfo>> FetchTrackPlaycounts(
-        List<Lfm.Core.Models.AlbumLookupInfo.AlbumTrack> tracks,
+        List<Lfm.Shared.Models.AlbumLookupInfo.AlbumTrack> tracks,
         string artist,
         string username,
         int throttleMs)
@@ -340,7 +342,8 @@ public class CheckCommand : BaseCommand
         int throttleMs)
     {
         // Try original name first
-        var trackInfo = await _apiClient.GetTrackInfoAsync(artist, trackName, username);
+        var trackInfoResult = await _dataProvider.GetTrackInfoAsync(artist, trackName, username);
+        var trackInfo = trackInfoResult.IsSuccess ? trackInfoResult.Data : null;
         var userPlaycount = trackInfo?.Track.GetUserPlaycount() ?? 0;
 
         // If we got plays, we're done
@@ -354,7 +357,8 @@ public class CheckCommand : BaseCommand
             var leftQuoteVariant = trackName.Replace('\'', '\u2018');
             if (throttleMs > 0) await Task.Delay(throttleMs);
 
-            trackInfo = await _apiClient.GetTrackInfoAsync(artist, leftQuoteVariant, username);
+            trackInfoResult = await _dataProvider.GetTrackInfoAsync(artist, leftQuoteVariant, username);
+            trackInfo = trackInfoResult.IsSuccess ? trackInfoResult.Data : null;
             userPlaycount = trackInfo?.Track.GetUserPlaycount() ?? 0;
             if (userPlaycount > 0)
                 return userPlaycount;
@@ -363,7 +367,8 @@ public class CheckCommand : BaseCommand
             var rightQuoteVariant = trackName.Replace('\'', '\u2019');
             if (throttleMs > 0) await Task.Delay(throttleMs);
 
-            trackInfo = await _apiClient.GetTrackInfoAsync(artist, rightQuoteVariant, username);
+            trackInfoResult = await _dataProvider.GetTrackInfoAsync(artist, rightQuoteVariant, username);
+            trackInfo = trackInfoResult.IsSuccess ? trackInfoResult.Data : null;
             userPlaycount = trackInfo?.Track.GetUserPlaycount() ?? 0;
             if (userPlaycount > 0)
                 return userPlaycount;
@@ -374,7 +379,7 @@ public class CheckCommand : BaseCommand
     }
 
     private void OutputAlbumConsole(
-        Lfm.Core.Models.AlbumLookupInfo albumInfo,
+        Lfm.Shared.Models.AlbumLookupInfo albumInfo,
         List<TrackPlayInfo>? trackBreakdown,
         bool verbose,
         System.Diagnostics.Stopwatch? stopwatch)
@@ -436,7 +441,7 @@ public class CheckCommand : BaseCommand
     }
 
     private void OutputAlbumJson(
-        Lfm.Core.Models.AlbumLookupInfo albumInfo,
+        Lfm.Shared.Models.AlbumLookupInfo albumInfo,
         List<TrackPlayInfo>? trackBreakdown,
         System.Diagnostics.Stopwatch? stopwatch)
     {

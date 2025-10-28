@@ -1,0 +1,11 @@
+Title,Album,Artist,Duration,Rating,Play Count,Removed
+Imagine,Imagine,John Lennon,3:03,5,25,No
+Let It Be,Let It Be,The Beatles,4:03,5,42,No
+Hey Jude,Hey Jude,The Beatles,7:11,5,38,No
+Bohemian Rhapsody,A Night at the Opera,Queen,5:55,5,50,No
+Stairway to Heaven,Led Zeppelin IV,Led Zeppelin,8:02,5,35,No
+Hotel California,Hotel California,Eagles,6:30,4,28,No
+Comfortably Numb,The Wall,Pink Floyd,6:23,5,45,No
+Wish You Were Here,Wish You Were Here,Pink Floyd,5:34,5,40,No
+Old Song That Was Removed,"Some Album","Some Artist",3:45,2,5,Yes
+Smells Like Teen Spirit,Nevermind,Nirvana,5:01,5,33,No

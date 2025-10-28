@@ -1,7 +1,11 @@
-using FluentAssertions;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models.Results;
 using Lfm.Core.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
+using FluentAssertions;
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Models.Results;
+using Lfm.Shared.Services;
 using Lfm.Core.Services.Cache;
 using Lfm.Tests.Mocks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -48,11 +52,11 @@ public class ErrorHandlingTests
     {
         // Arrange
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopArtists>.ApiError("API timeout"));
+            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopArtists>.ApiError("API timeout"));
 
         // Act
-        var result = await _cachedClient.GetTopArtistsWithResultAsync("testuser", "overall", 10, 1);
+        var result = await _cachedClient.GetTopArtistsWithResultAsync("testuser", LastFmPeriod.Overall, 10, 1);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -68,12 +72,12 @@ public class ErrorHandlingTests
     {
         // Arrange
         _mockInnerClient
-            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopTracks>.ValidationError("Invalid username"));
+            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopTracks>.ValidationError("Invalid username"));
 
         // Act
-        await _cachedClient.GetTopTracksWithResultAsync("invaliduser", "overall", 10, 1);
-        await _cachedClient.GetTopTracksWithResultAsync("invaliduser", "overall", 10, 1);
+        await _cachedClient.GetTopTracksWithResultAsync("invaliduser", LastFmPeriod.Overall, 10, 1);
+        await _cachedClient.GetTopTracksWithResultAsync("invaliduser", LastFmPeriod.Overall, 10, 1);
 
         // Assert - Errors should never be cached
         _cacheStorage.StoreCount.Should().Be(0, "validation errors should not be cached");
@@ -84,11 +88,11 @@ public class ErrorHandlingTests
     {
         // Arrange
         _mockInnerClient
-            .Setup(c => c.GetTopAlbumsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopAlbums>.DataError("No albums found"));
+            .Setup(c => c.GetTopAlbumsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopAlbums>.DataError("No albums found"));
 
         // Act
-        var result = await _cachedClient.GetTopAlbumsWithResultAsync("testuser", "overall", 10, 1);
+        var result = await _cachedClient.GetTopAlbumsWithResultAsync("testuser", LastFmPeriod.Overall, 10, 1);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -101,11 +105,11 @@ public class ErrorHandlingTests
     {
         // Arrange
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopArtists>.ConfigurationError("Missing API key"));
+            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopArtists>.ConfigurationError("Missing API key"));
 
         // Act
-        var result = await _cachedClient.GetTopArtistsWithResultAsync("testuser", "overall", 10, 1);
+        var result = await _cachedClient.GetTopArtistsWithResultAsync("testuser", LastFmPeriod.Overall, 10, 1);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -120,11 +124,11 @@ public class ErrorHandlingTests
         var error = new ErrorResult(ErrorType.NetworkError, "Connection timeout");
 
         _mockInnerClient
-            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopTracks>.Fail(error));
+            .Setup(c => c.GetTopTracksWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopTracks>.Fail(error));
 
         // Act
-        var result = await _cachedClient.GetTopTracksWithResultAsync("testuser", "overall", 10, 1);
+        var result = await _cachedClient.GetTopTracksWithResultAsync("testuser", LastFmPeriod.Overall, 10, 1);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -139,11 +143,11 @@ public class ErrorHandlingTests
         var error = new ErrorResult(ErrorType.RateLimitError, "Rate limit exceeded");
 
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopArtists>.Fail(error));
+            .Setup(c => c.GetTopArtistsWithResultAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopArtists>.Fail(error));
 
         // Act
-        var result = await _cachedClient.GetTopArtistsWithResultAsync("testuser", "overall", 10, 1);
+        var result = await _cachedClient.GetTopArtistsWithResultAsync("testuser", LastFmPeriod.Overall, 10, 1);
 
         // Assert
         result.IsFailure.Should().BeTrue();
@@ -155,21 +159,21 @@ public class ErrorHandlingTests
     {
         // Arrange
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsWithResultAsync("user1", It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopArtists>.ApiError("API error"));
+            .Setup(c => c.GetTopArtistsWithResultAsync("user1", It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopArtists>.ApiError("API error"));
 
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsWithResultAsync("user2", It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopArtists>.ValidationError("Validation error"));
+            .Setup(c => c.GetTopArtistsWithResultAsync("user2", It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopArtists>.ValidationError("Validation error"));
 
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsWithResultAsync("user3", It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
-            .ReturnsAsync(Result<Core.Models.TopArtists>.DataError("Data error"));
+            .Setup(c => c.GetTopArtistsWithResultAsync("user3", It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
+            .ReturnsAsync(Result<Lfm.Shared.Models.TopArtists>.DataError("Data error"));
 
         // Act
-        var result1 = await _cachedClient.GetTopArtistsWithResultAsync("user1", "overall", 10, 1);
-        var result2 = await _cachedClient.GetTopArtistsWithResultAsync("user2", "overall", 10, 1);
-        var result3 = await _cachedClient.GetTopArtistsWithResultAsync("user3", "overall", 10, 1);
+        var result1 = await _cachedClient.GetTopArtistsWithResultAsync("user1", LastFmPeriod.Overall, 10, 1);
+        var result2 = await _cachedClient.GetTopArtistsWithResultAsync("user2", LastFmPeriod.Overall, 10, 1);
+        var result3 = await _cachedClient.GetTopArtistsWithResultAsync("user3", LastFmPeriod.Overall, 10, 1);
 
         // Assert
         result1.Error!.Type.Should().Be(ErrorType.ApiError);

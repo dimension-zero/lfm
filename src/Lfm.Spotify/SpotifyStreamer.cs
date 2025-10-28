@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Web;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Lfm.Spotify.Models;
 
 namespace Lfm.Spotify;

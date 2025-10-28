@@ -1,3 +1,5 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -13,12 +15,12 @@ public class NewReleasesCommand : BaseCommand
     private readonly ILastFmService _lastFmService;
 
     public NewReleasesCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILastFmService lastFmService,
         ILogger<NewReleasesCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _lastFmService = lastFmService ?? throw new ArgumentNullException(nameof(lastFmService));
     }

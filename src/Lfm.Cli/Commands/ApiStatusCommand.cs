@@ -1,3 +1,5 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -21,11 +23,11 @@ public class ApiStatusCommand : BaseCommand, IDisposable
     }
 
     public ApiStatusCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILogger<ApiStatusCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _httpClient = new HttpClient();
         _httpClient.DefaultRequestHeaders.Add("User-Agent", "lfm-cli/1.0");

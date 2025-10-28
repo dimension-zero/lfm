@@ -1,7 +1,9 @@
 using System.Text.Json;
 using System.Web;
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Configuration;
+using Lfm.Core.Configuration;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
 using Microsoft.Extensions.Logging;
 
 namespace Lfm.Core.Services;
@@ -9,9 +11,9 @@ namespace Lfm.Core.Services;
 public interface ILastFmApiClient
 {
     // Legacy nullable methods (maintained for compatibility)
-    Task<TopArtists?> GetTopArtistsAsync(string username, string period = "overall", int limit = 10, int page = 1);
-    Task<TopTracks?> GetTopTracksAsync(string username, string period = "overall", int limit = 10, int page = 1);
-    Task<TopAlbums?> GetTopAlbumsAsync(string username, string period = "overall", int limit = 10, int page = 1);
+    Task<TopArtists?> GetTopArtistsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1);
+    Task<TopTracks?> GetTopTracksAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1);
+    Task<TopAlbums?> GetTopAlbumsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1);
     Task<TopTracks?> GetArtistTopTracksAsync(string artist, int limit = 10);
     Task<TopAlbums?> GetArtistTopAlbumsAsync(string artist, int limit = 10);
     Task<SimilarArtists?> GetSimilarArtistsAsync(string artist, int limit = 50);
@@ -24,9 +26,9 @@ public interface ILastFmApiClient
     Task<TopAlbums?> GetTopAlbumsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10);
     
     // New Result-based methods for better error handling
-    Task<Result<TopArtists>> GetTopArtistsWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1);
-    Task<Result<TopTracks>> GetTopTracksWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1);
-    Task<Result<TopAlbums>> GetTopAlbumsWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1);
+    Task<Result<TopArtists>> GetTopArtistsWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1);
+    Task<Result<TopTracks>> GetTopTracksWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1);
+    Task<Result<TopAlbums>> GetTopAlbumsWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1);
     Task<Result<TopTracks>> GetArtistTopTracksWithResultAsync(string artist, int limit = 10);
     Task<Result<TopAlbums>> GetArtistTopAlbumsWithResultAsync(string artist, int limit = 10);
     Task<Result<SimilarArtists>> GetSimilarArtistsWithResultAsync(string artist, int limit = 50);
@@ -54,6 +56,7 @@ public class LastFmApiClient : ILastFmApiClient
     private readonly string _apiKey;
     private readonly int _apiThrottleMs;
     private readonly bool _enableDebugLogging;
+    private readonly ICircuitBreaker? _circuitBreaker;
     private const string BaseUrl = "https://ws.audioscrobbler.com/2.0/";
 
     // Timing properties for last API call (used by CachedLastFmApiClient for detailed breakdown)
@@ -61,24 +64,31 @@ public class LastFmApiClient : ILastFmApiClient
     public long LastJsonReadMs { get; private set; }
     public long LastJsonParseMs { get; private set; }
 
-    public LastFmApiClient(HttpClient httpClient, ILogger<LastFmApiClient> logger, string apiKey, int apiThrottleMs = 100, bool enableDebugLogging = false)
+    public LastFmApiClient(
+        HttpClient httpClient,
+        ILogger<LastFmApiClient> logger,
+        string apiKey,
+        int apiThrottleMs = 100,
+        bool enableDebugLogging = false,
+        ICircuitBreaker? circuitBreaker = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
         _apiThrottleMs = apiThrottleMs;
         _enableDebugLogging = enableDebugLogging;
+        _circuitBreaker = circuitBreaker;
     }
 
-    public async Task<TopArtists?> GetTopArtistsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopArtists?> GetTopArtistsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         try
         {
             var parameters = new Dictionary<string, string>
             {
-                ["method"] = "user.getTopArtists",
+                ["method"] = SearchConstants.LastFmApiMethods.UserGetTopArtists,
                 ["user"] = username,
-                ["period"] = period,
+                ["period"] = period.ToApiString(),
                 ["limit"] = limit.ToString(),
                 ["page"] = page.ToString(),
                 ["api_key"] = _apiKey,
@@ -121,15 +131,15 @@ public class LastFmApiClient : ILastFmApiClient
         }
     }
 
-    public async Task<TopTracks?> GetTopTracksAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopTracks?> GetTopTracksAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         try
         {
             var parameters = new Dictionary<string, string>
             {
-                ["method"] = "user.getTopTracks",
+                ["method"] = SearchConstants.LastFmApiMethods.UserGetTopTracks,
                 ["user"] = username,
-                ["period"] = period,
+                ["period"] = period.ToApiString(),
                 ["limit"] = limit.ToString(),
                 ["page"] = page.ToString(),
                 ["api_key"] = _apiKey,
@@ -172,15 +182,15 @@ public class LastFmApiClient : ILastFmApiClient
         }
     }
 
-    public async Task<TopAlbums?> GetTopAlbumsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopAlbums?> GetTopAlbumsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         try
         {
             var parameters = new Dictionary<string, string>
             {
-                ["method"] = "user.getTopAlbums",
+                ["method"] = SearchConstants.LastFmApiMethods.UserGetTopAlbums,
                 ["user"] = username,
-                ["period"] = period,
+                ["period"] = period.ToApiString(),
                 ["limit"] = limit.ToString(),
                 ["page"] = page.ToString(),
                 ["api_key"] = _apiKey,
@@ -229,7 +239,7 @@ public class LastFmApiClient : ILastFmApiClient
         {
             var parameters = new Dictionary<string, string>
             {
-                ["method"] = "artist.getTopTracks",
+                ["method"] = SearchConstants.LastFmApiMethods.ArtistGetTopTracks,
                 ["artist"] = artist,
                 ["limit"] = limit.ToString(),
                 ["autocorrect"] = "1",
@@ -272,7 +282,7 @@ public class LastFmApiClient : ILastFmApiClient
         {
             var parameters = new Dictionary<string, string>
             {
-                ["method"] = "artist.getTopAlbums",
+                ["method"] = SearchConstants.LastFmApiMethods.ArtistGetTopAlbums,
                 ["artist"] = artist,
                 ["limit"] = limit.ToString(),
                 ["autocorrect"] = "1",
@@ -315,7 +325,7 @@ public class LastFmApiClient : ILastFmApiClient
         {
             var parameters = new Dictionary<string, string>
             {
-                ["method"] = "artist.getSimilar",
+                ["method"] = SearchConstants.LastFmApiMethods.ArtistGetSimilar,
                 ["artist"] = artist,
                 ["limit"] = limit.ToString(),
                 ["autocorrect"] = "1",
@@ -358,7 +368,7 @@ public class LastFmApiClient : ILastFmApiClient
         {
             var parameters = new Dictionary<string, string>
             {
-                ["method"] = "artist.getTopTags",
+                ["method"] = SearchConstants.LastFmApiMethods.ArtistGetTopTags,
                 ["artist"] = artist,
                 ["autocorrect"] = autocorrect ? "1" : "0",
                 ["api_key"] = _apiKey,
@@ -403,7 +413,7 @@ public class LastFmApiClient : ILastFmApiClient
             
             var parameters = new Dictionary<string, string>
             {
-                ["method"] = "user.getRecentTracks",
+                ["method"] = SearchConstants.LastFmApiMethods.UserGetRecentTracks,
                 ["user"] = username,
                 ["from"] = fromTimestamp.ToString(),
                 ["to"] = toTimestamp.ToString(),
@@ -756,17 +766,37 @@ public class LastFmApiClient : ILastFmApiClient
         }
     }
 
-    private async Task<string?> MakeRequestAsync(Dictionary<string, string> parameters)
+    /// <summary>
+    /// Result-based version of MakeRequestAsync for proper error handling.
+    /// Optionally wraps HTTP requests in circuit breaker for resilience.
+    /// </summary>
+    private async Task<Result<string>> MakeRequestWithResultAsync(Dictionary<string, string> parameters)
+    {
+        // If circuit breaker is enabled, wrap the request
+        if (_circuitBreaker != null)
+        {
+            return await _circuitBreaker.ExecuteAsync(() => MakeRequestCoreAsync(parameters));
+        }
+
+        // No circuit breaker - execute directly
+        return await MakeRequestCoreAsync(parameters);
+    }
+
+    /// <summary>
+    /// Core HTTP request logic (called by MakeRequestWithResultAsync, potentially through circuit breaker)
+    /// </summary>
+    private async Task<Result<string>> MakeRequestCoreAsync(Dictionary<string, string> parameters)
     {
         var query = string.Join("&", parameters.Select(kvp => $"{kvp.Key}={HttpUtility.UrlEncode(kvp.Value)}"));
         var url = $"{BaseUrl}?{query}";
         var maskedUrl = url.Replace(_apiKey, "***");
+        var method = parameters.GetValueOrDefault("method", "unknown");
 
         // Debug logging - detailed request information
         if (_enableDebugLogging)
         {
             _logger.LogInformation("API DEBUG - Request Details:");
-            _logger.LogInformation("  Method: {Method}", parameters.GetValueOrDefault("method", "unknown"));
+            _logger.LogInformation("  Method: {Method}", method);
             _logger.LogInformation("  Artist: {Artist}", parameters.GetValueOrDefault("artist", "n/a"));
             _logger.LogInformation("  Username: {Username}", parameters.GetValueOrDefault("user", "n/a"));
             _logger.LogInformation("  Period: {Period}", parameters.GetValueOrDefault("period", "n/a"));
@@ -802,7 +832,16 @@ public class LastFmApiClient : ILastFmApiClient
                 }
             }
 
-            response.EnsureSuccessStatusCode();
+            // Check HTTP status
+            if (!response.IsSuccessStatusCode)
+            {
+                var statusCode = (int)response.StatusCode;
+                var errorContent = await response.Content.ReadAsStringAsync();
+
+                return Result<string>.ApiError(
+                    $"Last.fm API returned {statusCode} {response.StatusCode}",
+                    $"Method: {method}, URL: {maskedUrl}, Response: {errorContent}");
+            }
 
             var jsonReadStopwatch = System.Diagnostics.Stopwatch.StartNew();
             var content = await response.Content.ReadAsStringAsync();
@@ -825,7 +864,15 @@ public class LastFmApiClient : ILastFmApiClient
                 }
             }
 
-            return content;
+            // Validate we received content
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return Result<string>.DataError(
+                    "Last.fm API returned empty response",
+                    $"Method: {method}, URL: {maskedUrl}");
+            }
+
+            return Result<string>.Ok(content);
         }
         catch (HttpRequestException ex)
         {
@@ -836,32 +883,62 @@ public class LastFmApiClient : ILastFmApiClient
             {
                 _logger.LogInformation("API DEBUG - HTTP Error Details:");
                 _logger.LogInformation("  Request: {Method} for {Artist}",
-                    parameters.GetValueOrDefault("method", "unknown"),
+                    method,
                     parameters.GetValueOrDefault("artist", parameters.GetValueOrDefault("user", "n/a")));
                 _logger.LogInformation("  URL: {Url}", maskedUrl);
                 _logger.LogInformation("  Error: {ErrorMessage}", ex.Message);
             }
 
-            return null;
+            return Result<string>.Fail(ErrorType.NetworkError,
+                $"Network error communicating with Last.fm API",
+                $"Method: {method}, Error: {ex.Message}");
+        }
+        catch (TaskCanceledException ex)
+        {
+            httpStopwatch.Stop();
+            _logger.LogError(ex, "Request to Last.fm API timed out (took {ElapsedMs}ms)", httpStopwatch.ElapsedMilliseconds);
+
+            return Result<string>.Fail(ErrorType.NetworkError,
+                $"Request to Last.fm API timed out",
+                $"Method: {method}, Elapsed: {httpStopwatch.ElapsedMilliseconds}ms");
+        }
+        catch (Exception ex)
+        {
+            httpStopwatch.Stop();
+            _logger.LogError(ex, "Unexpected error making request to Last.fm API (took {ElapsedMs}ms)", httpStopwatch.ElapsedMilliseconds);
+
+            return Result<string>.Fail(new ErrorResult(
+                ErrorType.UnknownError,
+                $"Unexpected error communicating with Last.fm API",
+                $"Method: {method}, Error: {ex.GetType().Name}: {ex.Message}"));
         }
     }
 
+    /// <summary>
+    /// Legacy nullable version - maintained for backward compatibility
+    /// </summary>
+    private async Task<string?> MakeRequestAsync(Dictionary<string, string> parameters)
+    {
+        var result = await MakeRequestWithResultAsync(parameters);
+        return result.IsSuccess ? result.Data : null;
+    }
+
     // New Result-based methods for better error handling
-    public async Task<Result<TopArtists>> GetTopArtistsWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopArtists>> GetTopArtistsWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         return await ExecuteWithResultAsync(
             () => GetTopArtistsAsync(username, period, limit, page),
             $"getting top artists for user {username}");
     }
 
-    public async Task<Result<TopTracks>> GetTopTracksWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopTracks>> GetTopTracksWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         return await ExecuteWithResultAsync(
             () => GetTopTracksAsync(username, period, limit, page),
             $"getting top tracks for user {username}");
     }
 
-    public async Task<Result<TopAlbums>> GetTopAlbumsWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopAlbums>> GetTopAlbumsWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         return await ExecuteWithResultAsync(
             () => GetTopAlbumsAsync(username, period, limit, page),
@@ -929,7 +1006,7 @@ public class LastFmApiClient : ILastFmApiClient
     {
         var parameters = new Dictionary<string, string>
         {
-            ["method"] = "artist.getInfo",
+            ["method"] = SearchConstants.LastFmApiMethods.ArtistGetInfo,
             ["artist"] = artist,
             ["api_key"] = _apiKey,
             ["format"] = "json",
@@ -960,7 +1037,7 @@ public class LastFmApiClient : ILastFmApiClient
     {
         var parameters = new Dictionary<string, string>
         {
-            ["method"] = "track.getInfo",
+            ["method"] = SearchConstants.LastFmApiMethods.TrackGetInfo,
             ["artist"] = artist,
             ["track"] = track,
             ["api_key"] = _apiKey,
@@ -992,7 +1069,7 @@ public class LastFmApiClient : ILastFmApiClient
     {
         var parameters = new Dictionary<string, string>
         {
-            ["method"] = "album.getInfo",
+            ["method"] = SearchConstants.LastFmApiMethods.AlbumGetInfo,
             ["artist"] = artist,
             ["album"] = album,
             ["api_key"] = _apiKey,

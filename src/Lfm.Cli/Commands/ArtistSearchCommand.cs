@@ -1,10 +1,12 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
 using Spectre.Console;
 using System.Text.Json;
-using static Lfm.Core.Configuration.SearchConstants;
+using static Lfm.Shared.Configuration.SearchConstants;
 
 namespace Lfm.Cli.Commands;
 
@@ -25,7 +27,7 @@ public class ArtistSearchCommand<T, TResponse> : BaseCommand
     private readonly Action<List<T>, int> _displayMethod;
 
     public ArtistSearchCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         IDisplayService displayService,
         ILogger logger,
@@ -35,7 +37,7 @@ public class ArtistSearchCommand<T, TResponse> : BaseCommand
         Func<TResponse, List<T>> extractItems,
         Func<T, string> getArtistName,
         Action<List<T>, int> displayMethod)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _displayService = displayService ?? throw new ArgumentNullException(nameof(displayService));
         _itemTypeName = itemTypeName ?? throw new ArgumentNullException(nameof(itemTypeName));
@@ -136,7 +138,8 @@ public class ArtistSearchCommand<T, TResponse> : BaseCommand
 
                 // Disable individual throttling for parallel execution
                 var wasThrottlingDisabled = false;
-                if (_apiClient is CachedLastFmApiClient cachedClientParallel)
+                if (_dataProvider is LastFmDataProvider lastFmProvider &&
+                    lastFmProvider.ApiClient is CachedLastFmApiClient cachedClientParallel)
                 {
                     wasThrottlingDisabled = cachedClientParallel.DisableThrottling;
                     cachedClientParallel.DisableThrottling = true;
@@ -236,7 +239,8 @@ public class ArtistSearchCommand<T, TResponse> : BaseCommand
                 finally
                 {
                     // Restore original throttling state
-                    if (_apiClient is CachedLastFmApiClient cachedClientRestore)
+                    if (_dataProvider is LastFmDataProvider lastFmProviderRestore &&
+                        lastFmProviderRestore.ApiClient is CachedLastFmApiClient cachedClientRestore)
                     {
                         cachedClientRestore.DisableThrottling = wasThrottlingDisabled;
                     }

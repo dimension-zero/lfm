@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.15.4" />
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
@@ -21,8 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Lfm.Shared\Lfm.Shared.csproj" />
     <ProjectReference Include="..\Lfm.Core\Lfm.Core.csproj" />
     <ProjectReference Include="..\Lfm.McpServer\Lfm.McpServer.csproj" />
+    <ProjectReference Include="..\Lfm.EfModels\Lfm.EfModels.csproj" />
   </ItemGroup>
 
 </Project>

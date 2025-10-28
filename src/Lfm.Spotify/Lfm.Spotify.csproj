@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../Lfm.Shared/Lfm.Shared.csproj" />
     <ProjectReference Include="../Lfm.Core/Lfm.Core.csproj" />
   </ItemGroup>
 

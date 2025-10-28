@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using Lfm.Shared.Configuration;
+using Lfm.Core.Configuration;
 
 namespace Lfm.Core.Services.Cache;
 
@@ -71,49 +73,49 @@ public static class CacheKeyExtensions
     /// Creates a cache key for user.getTopTracks API calls.
     /// </summary>
     public static string ForTopTracks(this ICacheKeyGenerator generator, string user, string period, int limit, int page)
-        => generator.GenerateKey("user.getTopTracks", user, period, limit, page);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.UserGetTopTracks, user, period, limit, page);
 
     /// <summary>
     /// Creates a cache key for user.getTopArtists API calls.
     /// </summary>
     public static string ForTopArtists(this ICacheKeyGenerator generator, string user, string period, int limit, int page)
-        => generator.GenerateKey("user.getTopArtists", user, period, limit, page);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.UserGetTopArtists, user, period, limit, page);
 
     /// <summary>
     /// Creates a cache key for user.getTopAlbums API calls.
     /// </summary>
     public static string ForTopAlbums(this ICacheKeyGenerator generator, string user, string period, int limit, int page)
-        => generator.GenerateKey("user.getTopAlbums", user, period, limit, page);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.UserGetTopAlbums, user, period, limit, page);
 
     /// <summary>
     /// Creates a cache key for artist.getTopTracks API calls.
     /// </summary>
     public static string ForArtistTopTracks(this ICacheKeyGenerator generator, string artist, int limit)
-        => generator.GenerateKey("artist.getTopTracks", artist, "n/a", limit, 1);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.ArtistGetTopTracks, artist, "n/a", limit, 1);
 
     /// <summary>
     /// Creates a cache key for artist.getTopAlbums API calls.
     /// </summary>
     public static string ForArtistTopAlbums(this ICacheKeyGenerator generator, string artist, int limit)
-        => generator.GenerateKey("artist.getTopAlbums", artist, "n/a", limit, 1);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.ArtistGetTopAlbums, artist, "n/a", limit, 1);
 
     /// <summary>
     /// Creates a cache key for artist.getSimilar API calls.
     /// </summary>
     public static string ForSimilarArtists(this ICacheKeyGenerator generator, string artist, int limit)
-        => generator.GenerateKey("artist.getSimilar", artist, "n/a", limit, 1);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.ArtistGetSimilar, artist, "n/a", limit, 1);
 
     /// <summary>
     /// Creates a cache key for artist.getTopTags API calls.
     /// </summary>
     public static string ForArtistTopTags(this ICacheKeyGenerator generator, string artist, bool autocorrect)
-        => generator.GenerateKey("artist.getTopTags", artist, autocorrect ? "autocorrect" : "noautocorrect", 1, 1);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.ArtistGetTopTags, artist, autocorrect ? "autocorrect" : "noautocorrect", 1, 1);
 
     /// <summary>
     /// Creates a cache key for user.getRecentTracks API calls with date range.
     /// </summary>
     public static string ForRecentTracks(this ICacheKeyGenerator generator, string user, string dateRange, int limit, int page)
-        => generator.GenerateKey("user.getRecentTracks", user, dateRange, limit, page);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.UserGetRecentTracks, user, dateRange, limit, page);
 
     /// <summary>
     /// Creates a cache key for date range top artists queries.
@@ -137,17 +139,17 @@ public static class CacheKeyExtensions
     /// Creates a cache key for artist.getInfo API calls with user playcount.
     /// </summary>
     public static string ForArtistInfo(this ICacheKeyGenerator generator, string artist, string username)
-        => generator.GenerateKey("artist.getInfo", username, artist, 1, 1);
+        => generator.GenerateKey(SearchConstants.LastFmApiMethods.ArtistGetInfo, username, artist, 1, 1);
 
     /// <summary>
     /// Creates a cache key for track.getInfo API calls with user playcount.
     /// </summary>
     public static string ForTrackInfo(this ICacheKeyGenerator generator, string artist, string track, string username)
-        => generator.GenerateKey($"track.getInfo|{track}", username, artist, 1, 1);
+        => generator.GenerateKey($"{SearchConstants.LastFmApiMethods.TrackGetInfo}|{track}", username, artist, 1, 1);
 
     /// <summary>
     /// Creates a cache key for album.getInfo API calls with user playcount.
     /// </summary>
     public static string ForAlbumInfo(this ICacheKeyGenerator generator, string artist, string album, string username)
-        => generator.GenerateKey($"album.getInfo|{album}", username, artist, 1, 1);
+        => generator.GenerateKey($"{SearchConstants.LastFmApiMethods.AlbumGetInfo}|{album}", username, artist, 1, 1);
 }

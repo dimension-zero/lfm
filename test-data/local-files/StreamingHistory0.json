@@ -1,0 +1,32 @@
+[
+  {
+    "endTime": "2024-01-15 14:30",
+    "artistName": "The Beatles",
+    "trackName": "Hey Jude",
+    "msPlayed": 420000
+  },
+  {
+    "endTime": "2024-01-15 14:38",
+    "artistName": "The Beatles",
+    "trackName": "Let It Be",
+    "msPlayed": 240000
+  },
+  {
+    "endTime": "2024-01-15 14:42",
+    "artistName": "Led Zeppelin",
+    "trackName": "Stairway to Heaven",
+    "msPlayed": 480000
+  },
+  {
+    "endTime": "2024-01-15 14:50",
+    "artistName": "Led Zeppelin",
+    "trackName": "Kashmir",
+    "msPlayed": 520000
+  },
+  {
+    "endTime": "2024-01-15 14:55",
+    "artistName": "The Beatles",
+    "trackName": "Come Together",
+    "msPlayed": 260000
+  }
+]

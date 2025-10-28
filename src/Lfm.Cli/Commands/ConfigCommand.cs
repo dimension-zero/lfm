@@ -1,3 +1,5 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -1007,6 +1009,134 @@ public class ConfigCommand
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error setting default player");
+            Console.WriteLine($"{_symbols.Error} Error: {ex.Message}");
+        }
+    }
+
+    public async Task SetDataSourceAsync(string dataSource)
+    {
+        try
+        {
+            if (!Enum.TryParse<DataSourceMode>(dataSource, true, out var mode))
+            {
+                Console.WriteLine($"{_symbols.Error} Invalid data source. Valid options: LastFm, LocalFiles, Merged");
+                return;
+            }
+
+            var config = await _configManager.LoadAsync();
+            config.DataSource = mode;
+            await _configManager.SaveAsync(config);
+
+            Console.WriteLine($"{_symbols.Success} Data source set to: {mode}");
+
+            if (mode == DataSourceMode.LocalFiles && config.LocalFilePaths.Count == 0)
+            {
+                Console.WriteLine($"{_symbols.Tip} Don't forget to set local file paths:");
+                Console.WriteLine("  lfm config set-local-file-paths \"/path/to/file1.json,/path/to/file2.json\"");
+                Console.WriteLine($"{_symbols.Tip} See docs/LOCAL_FILE_FORMATS.md for supported file formats");
+            }
+
+            Console.WriteLine(ErrorMessages.Format(ErrorMessages.ConfigSavedTo, _configManager.GetConfigPath()));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting data source");
+            Console.WriteLine($"{_symbols.Error} Error: {ex.Message}");
+        }
+    }
+
+    public async Task GetDataSourceAsync()
+    {
+        try
+        {
+            var config = await _configManager.LoadAsync();
+
+            Console.WriteLine($"{_symbols.Settings} Current data source: {config.DataSource}");
+
+            if (config.DataSource == DataSourceMode.LocalFiles)
+            {
+                if (config.LocalFilePaths.Count > 0)
+                {
+                    Console.WriteLine($"{_symbols.Stats} Local file paths ({config.LocalFilePaths.Count}):");
+                    foreach (var path in config.LocalFilePaths)
+                    {
+                        var exists = File.Exists(path);
+                        var symbol = exists ? _symbols.Success : _symbols.Error;
+                        Console.WriteLine($"  {symbol} {path}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"{_symbols.Error} No local file paths configured.");
+                    Console.WriteLine($"{_symbols.Tip} Use: lfm config set-local-file-paths \"/path/to/file.json\"");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting data source");
+            Console.WriteLine($"{_symbols.Error} Error: {ex.Message}");
+        }
+    }
+
+    public async Task SetLocalFilePathsAsync(string paths)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(paths))
+            {
+                Console.WriteLine($"{_symbols.Error} File paths cannot be empty.");
+                Console.WriteLine($"{_symbols.Tip} Usage: lfm config set-local-file-paths \"/path/file1.json,/path/file2.json\"");
+                return;
+            }
+
+            // Split by comma and trim whitespace
+            var pathList = paths.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .ToList();
+
+            if (pathList.Count == 0)
+            {
+                Console.WriteLine($"{_symbols.Error} No valid paths found.");
+                return;
+            }
+
+            // Validate paths exist
+            var invalidPaths = pathList.Where(p => !File.Exists(p)).ToList();
+            if (invalidPaths.Any())
+            {
+                Console.WriteLine($"{_symbols.Error} Warning: {invalidPaths.Count} path(s) do not exist:");
+                foreach (var path in invalidPaths)
+                {
+                    Console.WriteLine($"  {_symbols.Error} {path}");
+                }
+                Console.WriteLine($"{_symbols.Tip} Paths will be saved but won't work until files exist.");
+            }
+
+            var config = await _configManager.LoadAsync();
+            config.LocalFilePaths = pathList;
+            await _configManager.SaveAsync(config);
+
+            Console.WriteLine($"{_symbols.Success} Local file paths saved ({pathList.Count} path(s)):");
+            foreach (var path in pathList)
+            {
+                var exists = File.Exists(path);
+                var symbol = exists ? _symbols.Success : _symbols.Error;
+                Console.WriteLine($"  {symbol} {path}");
+            }
+
+            if (config.DataSource != DataSourceMode.LocalFiles)
+            {
+                Console.WriteLine($"{_symbols.Tip} Current data source is {config.DataSource}. To use local files:");
+                Console.WriteLine("  lfm config set-data-source LocalFiles");
+            }
+
+            Console.WriteLine(ErrorMessages.Format(ErrorMessages.ConfigSavedTo, _configManager.GetConfigPath()));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error setting local file paths");
             Console.WriteLine($"{_symbols.Error} Error: {ex.Message}");
         }
     }

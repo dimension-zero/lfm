@@ -1,7 +1,12 @@
-using System.Text.Json;
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Core.Configuration;
 using Lfm.Core.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
+using System.Text.Json;
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
+using Lfm.Shared.Services;
 
 namespace Lfm.Tests.Mocks;
 
@@ -18,7 +23,7 @@ public class MockLastFmApiClient : ILastFmApiClient
         _testDataPath = testDataPath ?? throw new ArgumentNullException(nameof(testDataPath));
     }
 
-    public async Task<Result<TopArtists>> GetTopArtistsWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopArtists>> GetTopArtistsWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         var filePath = Path.Combine(_testDataPath, "top-artists-response.json");
         var json = await File.ReadAllTextAsync(filePath);
@@ -30,7 +35,7 @@ public class MockLastFmApiClient : ILastFmApiClient
         return Result<TopArtists>.Ok(response.TopArtists);
     }
 
-    public async Task<Result<TopTracks>> GetTopTracksWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopTracks>> GetTopTracksWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         var filePath = Path.Combine(_testDataPath, "top-tracks-response.json");
         var json = await File.ReadAllTextAsync(filePath);
@@ -42,7 +47,7 @@ public class MockLastFmApiClient : ILastFmApiClient
         return Result<TopTracks>.Ok(response.TopTracks);
     }
 
-    public async Task<Result<TopAlbums>> GetTopAlbumsWithResultAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<Result<TopAlbums>> GetTopAlbumsWithResultAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         var filePath = Path.Combine(_testDataPath, "top-albums-response.json");
         var json = await File.ReadAllTextAsync(filePath);
@@ -55,19 +60,19 @@ public class MockLastFmApiClient : ILastFmApiClient
     }
 
     // Legacy nullable methods - delegate to Result-based methods
-    public async Task<TopArtists?> GetTopArtistsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopArtists?> GetTopArtistsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         var result = await GetTopArtistsWithResultAsync(username, period, limit, page);
         return result.Success ? result.Data : null;
     }
 
-    public async Task<TopTracks?> GetTopTracksAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopTracks?> GetTopTracksAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         var result = await GetTopTracksWithResultAsync(username, period, limit, page);
         return result.Success ? result.Data : null;
     }
 
-    public async Task<TopAlbums?> GetTopAlbumsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+    public async Task<TopAlbums?> GetTopAlbumsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
     {
         var result = await GetTopAlbumsWithResultAsync(username, period, limit, page);
         return result.Success ? result.Data : null;

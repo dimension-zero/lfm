@@ -1,4 +1,4 @@
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Models.Results;
 
 namespace Lfm.Schema;
 

@@ -1,5 +1,6 @@
 using Lfm.Sonos.Models;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -192,6 +193,7 @@ public class SonosStreamer : ISonosStreamer
         _logger.LogInformation("Skipped {Direction} on Sonos room '{Room}'", direction, roomName);
     }
 
+    [SuppressMessage("SilentFailure", "SF001", Justification = "External Sonos API integration - null indicates playback state unavailable or room not playing")]
     public async Task<SonosPlaybackState?> GetPlaybackStateAsync(string roomName)
     {
         await ValidateAvailabilityAsync();

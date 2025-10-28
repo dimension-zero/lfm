@@ -1,3 +1,8 @@
+using Lfm.Core.Configuration;
+using Lfm.Core.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
+using Lfm.Core.Attributes;
 using Lfm.Core.Services.Cache;
 
 namespace Lfm.Tests.Mocks;
@@ -50,6 +55,7 @@ public class InMemoryCacheStorage : ICacheStorage
         return Task.FromResult(true);
     }
 
+    [SuppressMessage("SilentFailure", "SF001", Justification = "Null return indicates cache miss, not error. Test mock matches FileCacheStorage behavior.")]
     public Task<string?> RetrieveAsync(string key)
     {
         if (string.IsNullOrWhiteSpace(key))

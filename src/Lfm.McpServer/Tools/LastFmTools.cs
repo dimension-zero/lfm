@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Text.Json;
 using Lfm.McpServer.Services;
+using Lfm.Shared.Configuration;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 
@@ -34,7 +35,7 @@ public static class LastFmTools
         if (_client == null || _logger == null || _username == null)
             throw new InvalidOperationException("Tools not initialized");
 
-        var actualPeriod = period ?? "overall";
+        var actualPeriod = LastFmPeriodExtensions.ParsePeriod(period ?? "overall");
         var actualLimit = Math.Clamp(limit ?? 10, 1, 50);
 
         var result = await _client.GetTopArtistsAsync(_username, actualPeriod, actualLimit);
@@ -52,7 +53,7 @@ public static class LastFmTools
         return JsonSerializer.Serialize(new
         {
             artists = result.Data,
-            period = actualPeriod,
+            period = actualPeriod.ToApiString(),
             count = result.Data!.Count
         });
     }
@@ -65,7 +66,7 @@ public static class LastFmTools
         if (_client == null || _logger == null || _username == null)
             throw new InvalidOperationException("Tools not initialized");
 
-        var actualPeriod = period ?? "overall";
+        var actualPeriod = LastFmPeriodExtensions.ParsePeriod(period ?? "overall");
         var actualLimit = Math.Clamp(limit ?? 10, 1, 50);
 
         var result = await _client.GetTopTracksAsync(_username, actualPeriod, actualLimit);
@@ -83,7 +84,7 @@ public static class LastFmTools
         return JsonSerializer.Serialize(new
         {
             tracks = result.Data,
-            period = actualPeriod,
+            period = actualPeriod.ToApiString(),
             count = result.Data!.Count
         });
     }
@@ -96,7 +97,7 @@ public static class LastFmTools
         if (_client == null || _logger == null || _username == null)
             throw new InvalidOperationException("Tools not initialized");
 
-        var actualPeriod = period ?? "overall";
+        var actualPeriod = LastFmPeriodExtensions.ParsePeriod(period ?? "overall");
         var actualLimit = Math.Clamp(limit ?? 10, 1, 50);
 
         var result = await _client.GetTopAlbumsAsync(_username, actualPeriod, actualLimit);
@@ -114,7 +115,7 @@ public static class LastFmTools
         return JsonSerializer.Serialize(new
         {
             albums = result.Data,
-            period = actualPeriod,
+            period = actualPeriod.ToApiString(),
             count = result.Data!.Count
         });
     }

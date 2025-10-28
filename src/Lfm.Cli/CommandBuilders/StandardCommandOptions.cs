@@ -1,6 +1,7 @@
 using System.CommandLine;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
-using static Lfm.Core.Configuration.SearchConstants;
+using static Lfm.Shared.Configuration.SearchConstants;
 
 namespace Lfm.Cli.CommandBuilders;
 

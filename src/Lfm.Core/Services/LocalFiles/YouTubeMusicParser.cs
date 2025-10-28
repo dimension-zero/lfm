@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
-using Lfm.Core.Models;
-using Lfm.Core.Models.LocalFiles;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.LocalFiles;
+using Lfm.Shared.Models.Results;
 
 namespace Lfm.Core.Services.LocalFiles;
 
@@ -125,6 +125,7 @@ public class YouTubeMusicParser : ILocalFileParser
             var artistIdx = Array.FindIndex(header, h => h.Trim().Equals("Artist", StringComparison.OrdinalIgnoreCase));
             var albumIdx = Array.FindIndex(header, h => h.Trim().Equals("Album", StringComparison.OrdinalIgnoreCase));
             var playCountIdx = Array.FindIndex(header, h => h.Trim().Equals("Play count", StringComparison.OrdinalIgnoreCase));
+            var removedIdx = Array.FindIndex(header, h => h.Trim().Equals("Removed", StringComparison.OrdinalIgnoreCase));
 
             if (titleIdx == -1 || artistIdx == -1)
                 return Result<List<PlayEvent>>.DataError("CSV missing required columns: Title, Artist");
@@ -137,6 +138,14 @@ public class YouTubeMusicParser : ILocalFileParser
 
                 if (row.Count <= Math.Max(titleIdx, artistIdx))
                     continue; // Skip malformed rows
+
+                // Filter out removed songs
+                if (removedIdx >= 0 && removedIdx < row.Count)
+                {
+                    var removedValue = row[removedIdx].Trim();
+                    if (removedValue.Equals("Yes", StringComparison.OrdinalIgnoreCase))
+                        continue; // Skip removed songs
+                }
 
                 var artist = row[artistIdx].Trim();
                 var title = row[titleIdx].Trim();

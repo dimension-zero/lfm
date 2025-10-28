@@ -128,7 +128,9 @@
       "Bash(do echo \"=== $dir ===\")",
       "Bash(done)",
       "Read(//c/**)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(for file in *.cs)",
+      "Bash(do sed -i 's/ILastFmApiClient apiClient/IMusicDataProvider dataProvider/g' \"$file\")"
     ],
     "deny": []
   }

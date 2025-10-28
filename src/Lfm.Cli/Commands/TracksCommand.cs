@@ -1,5 +1,7 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -12,13 +14,13 @@ public class TracksCommand : BaseCommand
     private readonly IDisplayService _displayService;
 
     public TracksCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILastFmService lastFmService,
         IDisplayService displayService,
         ILogger<TracksCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _lastFmService = lastFmService ?? throw new ArgumentNullException(nameof(lastFmService));
         _displayService = displayService ?? throw new ArgumentNullException(nameof(displayService));
@@ -123,7 +125,7 @@ public class TracksCommand : BaseCommand
                 }
 
                 // Use service layer for range query
-                var (rangeTracks, totalCount) = await _lastFmService.GetUserTopTracksRangeAsync(user, resolvedPeriod, startIndex, endIndex);
+                var (rangeTracks, totalCount) = await _lastFmService.GetUserTopTracksRangeAsync(user, LastFmPeriodExtensions.ParsePeriod(resolvedPeriod), startIndex, endIndex);
                 
                 if (!rangeTracks.Any())
                 {
@@ -178,7 +180,7 @@ public class TracksCommand : BaseCommand
             }
             else
             {
-                result = await _lastFmService.GetUserTopTracksAsync(user, resolvedPeriod, limit);
+                result = await _lastFmService.GetUserTopTracksAsync(user, LastFmPeriodExtensions.ParsePeriod(resolvedPeriod), limit);
             }
 
             if (result?.Tracks == null || !result.Tracks.Any())

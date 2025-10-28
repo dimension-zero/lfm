@@ -1,5 +1,7 @@
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Configuration;
+using Lfm.Core.Configuration;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
 
 namespace Lfm.Core.Services;
 
@@ -13,17 +15,17 @@ public interface ILastFmService
     /// <summary>
     /// Gets user's top artists for a specified period
     /// </summary>
-    Task<TopArtists?> GetUserTopArtistsAsync(string username, string period, int limit = 10, int page = 1);
-    
+    Task<TopArtists?> GetUserTopArtistsAsync(string username, LastFmPeriod period, int limit = 10, int page = 1);
+
     /// <summary>
     /// Gets user's top tracks for a specified period
     /// </summary>
-    Task<TopTracks?> GetUserTopTracksAsync(string username, string period, int limit = 10, int page = 1);
-    
+    Task<TopTracks?> GetUserTopTracksAsync(string username, LastFmPeriod period, int limit = 10, int page = 1);
+
     /// <summary>
     /// Gets user's top albums for a specified period
     /// </summary>
-    Task<TopAlbums?> GetUserTopAlbumsAsync(string username, string period, int limit = 10, int page = 1);
+    Task<TopAlbums?> GetUserTopAlbumsAsync(string username, LastFmPeriod period, int limit = 10, int page = 1);
 
     /// <summary>
     /// Gets user's recent tracks in chronological order (most recent first)
@@ -66,17 +68,17 @@ public interface ILastFmService
     /// <summary>
     /// Gets a specific range of user's top artists (e.g., ranks 50-100)
     /// </summary>
-    Task<(List<Artist> items, string totalCount)> GetUserTopArtistsRangeAsync(string username, string period, int startIndex, int endIndex);
-    
+    Task<(List<Artist> items, string totalCount)> GetUserTopArtistsRangeAsync(string username, LastFmPeriod period, int startIndex, int endIndex);
+
     /// <summary>
     /// Gets a specific range of user's top tracks (e.g., ranks 50-100)
     /// </summary>
-    Task<(List<Track> items, string totalCount)> GetUserTopTracksRangeAsync(string username, string period, int startIndex, int endIndex);
-    
+    Task<(List<Track> items, string totalCount)> GetUserTopTracksRangeAsync(string username, LastFmPeriod period, int startIndex, int endIndex);
+
     /// <summary>
     /// Gets a specific range of user's top albums (e.g., ranks 50-100)
     /// </summary>
-    Task<(List<Album> items, string totalCount)> GetUserTopAlbumsRangeAsync(string username, string period, int startIndex, int endIndex);
+    Task<(List<Album> items, string totalCount)> GetUserTopAlbumsRangeAsync(string username, LastFmPeriod period, int startIndex, int endIndex);
     
     // Deep search operations - search through user's entire history
     /// <summary>
@@ -98,7 +100,7 @@ public interface ILastFmService
         int recommendationLimit = 20,
         int filterThreshold = 0,
         int tracksPerArtist = 0,
-        string period = "overall",
+        LastFmPeriod period = LastFmPeriod.Overall,
         bool excludeTags = false);
     
     /// <summary>
@@ -124,7 +126,7 @@ public interface ILastFmService
     /// </summary>
     Task<List<Track>> GetMixtapeTracksAsync(string username,
         int targetTracks,
-        string? period = null,
+        LastFmPeriod? period = null,
         DateTime? fromDate = null,
         DateTime? toDate = null,
         float bias = 0.3f,
@@ -137,8 +139,73 @@ public interface ILastFmService
     /// <summary>
     /// Gets user's top artists with proper error handling
     /// </summary>
-    Task<Result<TopArtists>> GetUserTopArtistsWithResultAsync(string username, string period, int limit = 10, int page = 1);
-    
+    Task<Result<TopArtists>> GetUserTopArtistsWithResultAsync(string username, LastFmPeriod period, int limit = 10, int page = 1);
+
+    /// <summary>
+    /// Gets user's top tracks with proper error handling
+    /// </summary>
+    Task<Result<TopTracks>> GetUserTopTracksWithResultAsync(string username, LastFmPeriod period, int limit = 10, int page = 1);
+
+    /// <summary>
+    /// Gets user's top albums with proper error handling
+    /// </summary>
+    Task<Result<TopAlbums>> GetUserTopAlbumsWithResultAsync(string username, LastFmPeriod period, int limit = 10, int page = 1);
+
+    /// <summary>
+    /// Gets user's top artists for a date range with proper error handling
+    /// </summary>
+    Task<Result<TopArtists>> GetUserTopArtistsForDateRangeWithResultAsync(string username, DateTime from, DateTime to, int limit = 10);
+
+    /// <summary>
+    /// Gets user's top tracks for a date range with proper error handling
+    /// </summary>
+    Task<Result<TopTracks>> GetUserTopTracksForDateRangeWithResultAsync(string username, DateTime from, DateTime to, int limit = 10);
+
+    /// <summary>
+    /// Gets user's top albums for a date range with proper error handling
+    /// </summary>
+    Task<Result<TopAlbums>> GetUserTopAlbumsForDateRangeWithResultAsync(string username, DateTime from, DateTime to, int limit = 10);
+
+    /// <summary>
+    /// Gets user's recent tracks with proper error handling
+    /// </summary>
+    Task<Result<RecentTracks>> GetRecentTracksWithResultAsync(string username, DateTime from, DateTime to, int limit = 200, int page = 1);
+
+    /// <summary>
+    /// Gets top tracks for an artist with proper error handling
+    /// </summary>
+    Task<Result<TopTracks>> GetArtistTopTracksWithResultAsync(string artist, int limit = 10);
+
+    /// <summary>
+    /// Gets top albums for an artist with proper error handling
+    /// </summary>
+    Task<Result<TopAlbums>> GetArtistTopAlbumsWithResultAsync(string artist, int limit = 10);
+
+    /// <summary>
+    /// Gets similar artists with proper error handling
+    /// </summary>
+    Task<Result<SimilarArtists>> GetSimilarArtistsWithResultAsync(string artist, int limit = 50);
+
+    /// <summary>
+    /// Gets top tags for an artist with proper error handling
+    /// </summary>
+    Task<Result<TopTags>> GetArtistTopTagsWithResultAsync(string artist, bool autocorrect = true);
+
+    /// <summary>
+    /// Gets artist info with proper error handling
+    /// </summary>
+    Task<Result<ArtistLookupInfo>> GetArtistInfoWithResultAsync(string artist, string username);
+
+    /// <summary>
+    /// Gets track info with proper error handling
+    /// </summary>
+    Task<Result<TrackLookupInfo>> GetTrackInfoWithResultAsync(string artist, string track, string username);
+
+    /// <summary>
+    /// Gets album info with proper error handling
+    /// </summary>
+    Task<Result<AlbumLookupInfo>> GetAlbumInfoWithResultAsync(string artist, string album, string username);
+
     /// <summary>
     /// Gets music recommendations with comprehensive error handling
     /// </summary>
@@ -147,7 +214,7 @@ public interface ILastFmService
         int recommendationLimit = 20,
         int filterThreshold = 0,
         int tracksPerArtist = 0,
-        string period = "overall",
+        LastFmPeriod period = LastFmPeriod.Overall,
         bool excludeTags = false);
 
     /// <summary>

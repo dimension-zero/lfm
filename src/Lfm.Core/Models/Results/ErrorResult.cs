@@ -28,9 +28,9 @@ public class ErrorResult
     public string? TechnicalDetails { get; }
 
     /// <summary>
-    /// Returns true if this is a retryable error (network issues, rate limits, etc.)
+    /// Returns true if this is a retryable error (network issues, rate limits, circuit breaker, etc.)
     /// </summary>
-    public bool IsRetryable => Type is ErrorType.ApiError or ErrorType.NetworkError;
+    public bool IsRetryable => Type is ErrorType.ApiError or ErrorType.NetworkError or ErrorType.CircuitBreakerOpen;
 
     /// <summary>
     /// Returns true if this is a user error that requires action (missing config, invalid input, etc.)
@@ -51,6 +51,7 @@ public class ErrorResult
             ErrorType.NetworkError => useUnicode ? "🔌" : "[NET]",
             ErrorType.AuthenticationError => useUnicode ? "🔐" : "[AUTH]",
             ErrorType.RateLimitError => useUnicode ? "⏱️" : "[RATE]",
+            ErrorType.CircuitBreakerOpen => useUnicode ? "🔴" : "[CIRCUIT]",
             ErrorType.UnknownError => useUnicode ? "❓" : "[UNKNOWN]",
             _ => useUnicode ? "❌" : "[ERROR]"
         };
@@ -104,6 +105,11 @@ public enum ErrorType
     /// Rate limit exceeded
     /// </summary>
     RateLimitError,
+
+    /// <summary>
+    /// Circuit breaker is open due to repeated failures
+    /// </summary>
+    CircuitBreakerOpen,
 
     /// <summary>
     /// Unexpected error that doesn't fit other categories

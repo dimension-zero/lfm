@@ -1,5 +1,9 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
+using Lfm.Shared.Services;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
@@ -11,18 +15,18 @@ namespace Lfm.Cli.Commands;
 /// </summary>
 public abstract class BaseCommand
 {
-    protected readonly ILastFmApiClient _apiClient;
+    protected readonly IMusicDataProvider _dataProvider;
     protected readonly IConfigurationManager _configManager;
     protected readonly ILogger _logger;
     protected readonly ISymbolProvider _symbols;
 
     protected BaseCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILogger logger,
         ISymbolProvider symbolProvider)
     {
-        _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+        _dataProvider = dataProvider ?? throw new ArgumentNullException(nameof(dataProvider));
         _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _symbols = symbolProvider ?? throw new ArgumentNullException(nameof(symbolProvider));
@@ -33,21 +37,22 @@ public abstract class BaseCommand
     /// </summary>
     protected void ConfigureCaching(bool timing = false, bool forceCache = false, bool forceApi = false, bool noCache = false)
     {
-        if (_apiClient is CachedLastFmApiClient cachedClient)
+        // Only configure caching if using Last.fm provider with cached client
+        if (_dataProvider is LastFmDataProvider lastFmProvider &&
+            lastFmProvider.ApiClient is CachedLastFmApiClient cachedClient)
         {
-            if (timing)
-            {
-                cachedClient.EnableTiming = true;
-                cachedClient.TimingResults.Clear();
-                cachedClient.WallClockStartTime = DateTime.UtcNow;
-            }
+            cachedClient.EnableTiming = timing;
 
-            // Set cache behavior based on flags
-            if (noCache) cachedClient.CacheBehavior = Lfm.Core.Configuration.CacheBehavior.NoCache;
-            else if (forceApi) cachedClient.CacheBehavior = Lfm.Core.Configuration.CacheBehavior.ForceApi;
-            else if (forceCache) cachedClient.CacheBehavior = Lfm.Core.Configuration.CacheBehavior.ForceCache;
-            else cachedClient.CacheBehavior = Lfm.Core.Configuration.CacheBehavior.Normal;
+            if (noCache)
+                cachedClient.CacheBehavior = CacheBehavior.NoCache;
+            else if (forceApi)
+                cachedClient.CacheBehavior = CacheBehavior.ForceApi;
+            else if (forceCache)
+                cachedClient.CacheBehavior = CacheBehavior.ForceCache;
+            else
+                cachedClient.CacheBehavior = CacheBehavior.Normal;
         }
+        // Note: Other providers (LocalFiles, Merged) will use their default cache behavior
     }
 
     /// <summary>
@@ -103,68 +108,80 @@ public abstract class BaseCommand
     /// <param name="page">Page number (for period-based calls only)</param>
     /// <returns>Top artists response or null</returns>
     protected async Task<TopArtists?> GetTopArtistsWithPeriodAsync(
-        string username, bool isDateRange, string period, DateTime? fromDate, DateTime? toDate, 
+        string username, bool isDateRange, string period, DateTime? fromDate, DateTime? toDate,
         int limit = 10, int page = 1)
     {
+        Result<TopArtists> result;
         if (isDateRange && fromDate.HasValue && toDate.HasValue)
         {
-            return await _apiClient.GetTopArtistsForDateRangeAsync(username, fromDate.Value, toDate.Value, limit);
+            result = await _dataProvider.GetTopArtistsForDateRangeAsync(username, fromDate.Value, toDate.Value, limit);
         }
         else
         {
-            return await _apiClient.GetTopArtistsAsync(username, period, limit, page);
+            result = await _dataProvider.GetTopArtistsAsync(username, LastFmPeriodExtensions.ParsePeriod(period), limit, page);
         }
+        return result.IsSuccess ? result.Data : null;
     }
 
     /// <summary>
     /// Gets top tracks using either period-based or date range API calls
     /// </summary>
     protected async Task<TopTracks?> GetTopTracksWithPeriodAsync(
-        string username, bool isDateRange, string period, DateTime? fromDate, DateTime? toDate, 
+        string username, bool isDateRange, string period, DateTime? fromDate, DateTime? toDate,
         int limit = 10, int page = 1)
     {
+        Result<TopTracks> result;
         if (isDateRange && fromDate.HasValue && toDate.HasValue)
         {
-            return await _apiClient.GetTopTracksForDateRangeAsync(username, fromDate.Value, toDate.Value, limit);
+            result = await _dataProvider.GetTopTracksForDateRangeAsync(username, fromDate.Value, toDate.Value, limit);
         }
         else
         {
-            return await _apiClient.GetTopTracksAsync(username, period, limit, page);
+            result = await _dataProvider.GetTopTracksAsync(username, LastFmPeriodExtensions.ParsePeriod(period), limit, page);
         }
+        return result.IsSuccess ? result.Data : null;
     }
 
     /// <summary>
     /// Gets top albums using either period-based or date range API calls
     /// </summary>
     protected async Task<TopAlbums?> GetTopAlbumsWithPeriodAsync(
-        string username, bool isDateRange, string period, DateTime? fromDate, DateTime? toDate, 
+        string username, bool isDateRange, string period, DateTime? fromDate, DateTime? toDate,
         int limit = 10, int page = 1)
     {
+        Result<TopAlbums> result;
         if (isDateRange && fromDate.HasValue && toDate.HasValue)
         {
-            return await _apiClient.GetTopAlbumsForDateRangeAsync(username, fromDate.Value, toDate.Value, limit);
+            result = await _dataProvider.GetTopAlbumsForDateRangeAsync(username, fromDate.Value, toDate.Value, limit);
         }
         else
         {
-            return await _apiClient.GetTopAlbumsAsync(username, period, limit, page);
+            result = await _dataProvider.GetTopAlbumsAsync(username, LastFmPeriodExtensions.ParsePeriod(period), limit, page);
         }
+        return result.IsSuccess ? result.Data : null;
     }
 
     /// <summary>
-    /// Validates that API key is configured
+    /// Validates that API key is configured (skips validation for LocalFiles mode)
     /// </summary>
-    /// <returns>True if API key is configured, false otherwise</returns>
+    /// <returns>True if API key is configured or not required, false otherwise</returns>
     protected async Task<bool> ValidateApiKeyAsync()
     {
         var config = await _configManager.LoadAsync();
-        
+
+        // Skip API key validation for LocalFiles mode
+        if (config.DataSource == DataSourceMode.LocalFiles)
+        {
+            return true;
+        }
+
         if (string.IsNullOrEmpty(config.ApiKey))
         {
             Console.WriteLine(ErrorMessages.NoApiKey);
             Console.WriteLine(ErrorMessages.ApiKeyInfo);
             return false;
         }
-        
+
         return true;
     }
 
@@ -378,8 +395,8 @@ public abstract class BaseCommand
         string totalCount = "0";
 
         // Calculate which pages we need
-        int startPage = ((startIndex - 1) / Lfm.Core.Configuration.SearchConstants.Api.MaxItemsPerPage) + 1;
-        int endPage = ((endIndex - 1) / Lfm.Core.Configuration.SearchConstants.Api.MaxItemsPerPage) + 1;
+        int startPage = ((startIndex - 1) / Lfm.Shared.Configuration.SearchConstants.Api.MaxItemsPerPage) + 1;
+        int endPage = ((endIndex - 1) / Lfm.Shared.Configuration.SearchConstants.Api.MaxItemsPerPage) + 1;
 
         for (int page = startPage; page <= endPage && allItems.Count < rangeSize; page++)
         {
@@ -389,7 +406,7 @@ public abstract class BaseCommand
                 await ApplyApiThrottleAsync(overrideDelayMs);
             }
 
-            var pageResult = await apiCall(user, period, Lfm.Core.Configuration.SearchConstants.Api.MaxItemsPerPage, page);
+            var pageResult = await apiCall(user, period, Lfm.Shared.Configuration.SearchConstants.Api.MaxItemsPerPage, page);
 
             if (pageResult == null)
             {
@@ -405,10 +422,10 @@ public abstract class BaseCommand
             totalCount = extractTotal(pageResult);
 
             // Calculate which items from this page we need
-            int pageStartPosition = (page - 1) * Lfm.Core.Configuration.SearchConstants.Api.MaxItemsPerPage + 1;
+            int pageStartPosition = (page - 1) * Lfm.Shared.Configuration.SearchConstants.Api.MaxItemsPerPage + 1;
 
             int takeStartIndex = Math.Max(0, startIndex - pageStartPosition);
-            int takeEndIndex = Math.Min(Lfm.Core.Configuration.SearchConstants.Api.MaxItemsPerPage - 1, endIndex - pageStartPosition);
+            int takeEndIndex = Math.Min(Lfm.Shared.Configuration.SearchConstants.Api.MaxItemsPerPage - 1, endIndex - pageStartPosition);
             int takeCount = takeEndIndex - takeStartIndex + 1;
 
             if (takeCount > 0)
@@ -431,7 +448,9 @@ public abstract class BaseCommand
     /// </summary>
     protected void DisplayTimingResults()
     {
-        if (_apiClient is CachedLastFmApiClient cachedClient && cachedClient.EnableTiming)
+        if (_dataProvider is LastFmDataProvider lastFmProvider &&
+            lastFmProvider.ApiClient is CachedLastFmApiClient cachedClient &&
+            cachedClient.EnableTiming)
         {
             var timingResults = cachedClient.TimingResults;
             if (timingResults.Any())

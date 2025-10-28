@@ -1,0 +1,483 @@
+Scanning 192 C# files in 'src'...
+
+Scanned 192 files (28025 lines)
+
+=======================================================
+  Silent Failure Detection Report
+=======================================================
+
+Total Findings:    77
+Active Findings:   77
+Exempted:          0
+
+
+=== Pattern : Nullable-Task-Return ===
+
+File:       ./src/Lfm.Cli/Commands/BaseCommand.cs:104
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       protected async Task<TopArtists?> GetTopArtistsWithPeriodAsync(
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Cli/Commands/BaseCommand.cs:121
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       protected async Task<TopTracks?> GetTopTracksWithPeriodAsync(
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Cli/Commands/BaseCommand.cs:138
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       protected async Task<TopAlbums?> GetTopAlbumsWithPeriodAsync(
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Cli/Commands/BaseCommand.cs:175
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       protected async Task<string?> GetUsernameAsync(string? providedUsername)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:57
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopArtists?> GetTopArtistsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:68
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetTopTracksAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:79
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetTopAlbumsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:90
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetArtistTopTracksAsync(string artist, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:101
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetArtistTopAlbumsAsync(string artist, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:112
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<SimilarArtists?> GetSimilarArtistsAsync(string artist, int limit = 50)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:123
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTags?> GetArtistTopTagsAsync(string artist, bool autocorrect = true)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:143
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       private async Task<T?> GetWithCacheAsync<T>(
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:399
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<RecentTracks?> GetRecentTracksAsync(string username, DateTime from, DateTime to, int limit = 200, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:411
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopArtists?> GetTopArtistsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:423
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetTopTracksForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:435
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetTopAlbumsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:723
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<ArtistLookupInfo?> GetArtistInfoAsync(string artist, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:734
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TrackLookupInfo?> GetTrackInfoAsync(string artist, string track, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/CachedLastFmApiClient.cs:745
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<AlbumLookupInfo?> GetAlbumInfoAsync(string artist, string album, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:82
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopArtists?> GetTopArtistsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:133
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetTopTracksAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:184
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetTopAlbumsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:235
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetArtistTopTracksAsync(string artist, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:278
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetArtistTopAlbumsAsync(string artist, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:321
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<SimilarArtists?> GetSimilarArtistsAsync(string artist, int limit = 50)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:364
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTags?> GetArtistTopTagsAsync(string artist, bool autocorrect = true)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:406
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<RecentTracks?> GetRecentTracksAsync(string username, DateTime from, DateTime to, int limit = 200, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:458
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopArtists?> GetTopArtistsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:563
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetTopTracksForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:661
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetTopAlbumsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:919
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       private async Task<string?> MakeRequestAsync(Dictionary<string, string> parameters)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:1004
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<ArtistLookupInfo?> GetArtistInfoAsync(string artist, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:1035
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TrackLookupInfo?> GetTrackInfoAsync(string artist, string track, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:1067
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<AlbumLookupInfo?> GetAlbumInfoAsync(string artist, string album, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:39
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopArtists?> GetUserTopArtistsAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:44
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetUserTopTracksAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:49
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetUserTopAlbumsAsync(string username, LastFmPeriod period, int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:54
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<RecentTracks?> GetUserRecentTracksAsync(string username, int limit = 20, int? hoursBack = null)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:73
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopArtists?> GetUserTopArtistsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:78
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetUserTopTracksForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:83
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetUserTopAlbumsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:89
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetArtistTopTracksAsync(string artistName, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:94
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetArtistTopAlbumsAsync(string artistName, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/LastFmService.cs:99
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<SimilarArtists?> GetSimilarArtistsAsync(string artistName, int limit = 50)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Core/Services/Cache/FileCacheStorage.cs:71
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<string?> RetrieveAsync(string key)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Sonos/SonosStreamer.cs:195
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<SonosPlaybackState?> GetPlaybackStateAsync(string roomName)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Spotify/SpotifyStreamer.cs:71
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<CurrentTrackInfo?> GetCurrentlyPlayingAsync()
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Spotify/SpotifyStreamer.cs:110
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<string?> SearchSpotifyAlbumUriAsync(string artistName, string albumName)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Spotify/Services/SpotifyPlaybackService.cs:623
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<CurrentTrackInfo?> GetCurrentlyPlayingAsync()
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Spotify/Services/SpotifyPlaybackService.cs:744
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       private async Task<string?> SearchSpotifyTrackAsync(Track track, string? albumName = null)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Spotify/Services/SpotifyPlaybackService.cs:944
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       private async Task<string?> GetCurrentUserIdAsync(string accessToken)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Spotify/Services/SpotifyPlaybackService.cs:960
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       private async Task<SpotifyPlaylist?> CreatePlaylistAsync(string accessToken, string userId, string playlistName)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Spotify/Services/SpotifySearchService.cs:128
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<string?> SearchAlbumUriAsync(string artistName, string albumName)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/InMemoryCacheStorage.cs:53
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<string?> RetrieveAsync(string key)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:58
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopArtists?> GetTopArtistsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:64
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopTracks?> GetTopTracksAsync(string username, string period = "overall", int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:70
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public async Task<TopAlbums?> GetTopAlbumsAsync(string username, string period = "overall", int limit = 10, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:77
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<TopTracks?> GetArtistTopTracksAsync(string artist, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:80
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<TopAlbums?> GetArtistTopAlbumsAsync(string artist, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:83
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<SimilarArtists?> GetSimilarArtistsAsync(string artist, int limit = 50)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:86
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<TopTags?> GetArtistTopTagsAsync(string artist, bool autocorrect = true)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:89
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<RecentTracks?> GetRecentTracksAsync(string username, DateTime from, DateTime to, int limit = 200, int page = 1)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:92
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<TopArtists?> GetTopArtistsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:95
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<TopTracks?> GetTopTracksForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:98
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<TopAlbums?> GetTopAlbumsForDateRangeAsync(string username, DateTime from, DateTime to, int limit = 10)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:125
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<ArtistLookupInfo?> GetArtistInfoAsync(string artist, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:128
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<TrackLookupInfo?> GetTrackInfoAsync(string artist, string track, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+File:       ./src/Lfm.Tests/Mocks/MockLastFmApiClient.cs:131
+Pattern:    Nullable-Task-Return
+Severity:   High
+Code:       public Task<AlbumLookupInfo?> GetAlbumInfoAsync(string artist, string album, string username)
+Suggestion: Change return type to Task<Result<T>> to properly report errors
+
+=== Pattern : Try-Catch-Throw ===
+
+File:       ./src/Lfm.Cli/Commands/BaseCommand.cs:87
+Pattern:    Try-Catch-Throw
+Severity:   Medium
+Code:       catch (ArgumentException ex)
+Suggestion: Consider returning Result<T>.Fail() instead of throwing per CLAUDE.md
+
+File:       ./src/Lfm.Core/Configuration/LfmConfig.cs:255
+Pattern:    Try-Catch-Throw
+Severity:   Medium
+Code:       catch (Exception ex)
+Suggestion: Consider returning Result<T>.Fail() instead of throwing per CLAUDE.md
+
+File:       ./src/Lfm.Sonos/SonosStreamer.cs:114
+Pattern:    Try-Catch-Throw
+Severity:   Medium
+Code:       catch (HttpRequestException ex)
+Suggestion: Consider returning Result<T>.Fail() instead of throwing per CLAUDE.md
+
+File:       ./src/Lfm.Sonos/SonosStreamer.cs:145
+Pattern:    Try-Catch-Throw
+Severity:   Medium
+Code:       catch (HttpRequestException ex)
+Suggestion: Consider returning Result<T>.Fail() instead of throwing per CLAUDE.md
+
+=== Pattern : Try-Catch-Return-Null ===
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:1028
+Pattern:    Try-Catch-Return-Null
+Severity:   High
+Code:       catch (JsonException ex)
+Suggestion: Return Result<T>.Fail() with error details instead of null
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:1060
+Pattern:    Try-Catch-Return-Null
+Severity:   High
+Code:       catch (JsonException ex)
+Suggestion: Return Result<T>.Fail() with error details instead of null
+
+File:       ./src/Lfm.Core/Services/LastFmApiClient.cs:1092
+Pattern:    Try-Catch-Return-Null
+Severity:   High
+Code:       catch (JsonException ex)
+Suggestion: Return Result<T>.Fail() with error details instead of null
+
+File:       ./src/Lfm.Sonos/SonosStreamer.cs:226
+Pattern:    Try-Catch-Return-Null
+Severity:   High
+Code:       catch
+Suggestion: Return Result<T>.Fail() with error details instead of null
+
+File:       ./src/Lfm.Spotify/Services/SpotifyPlaybackService.cs:669
+Pattern:    Try-Catch-Return-Null
+Severity:   High
+Code:       catch
+Suggestion: Return Result<T>.Fail() with error details instead of null
+
+=======================================================
+

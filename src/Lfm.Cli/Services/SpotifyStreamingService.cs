@@ -1,5 +1,5 @@
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
 using Lfm.Core.Services;
 using Lfm.Spotify;
 using Microsoft.Extensions.Logging;

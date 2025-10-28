@@ -1,7 +1,7 @@
 using System.Text.Json;
-using Lfm.Core.Models;
-using Lfm.Core.Models.LocalFiles;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.LocalFiles;
+using Lfm.Shared.Models.Results;
 
 namespace Lfm.Core.Services.LocalFiles;
 

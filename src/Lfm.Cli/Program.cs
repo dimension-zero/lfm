@@ -2,14 +2,16 @@ using System.CommandLine;
 using Lfm.Cli.CommandBuilders;
 using Lfm.Cli.Commands;
 using Lfm.Cli.Services;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
+using Lfm.Shared.Services;
 using Lfm.Core.Services;
 using Lfm.Core.Services.Cache;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using static Lfm.Core.Configuration.SearchConstants;
+using static Lfm.Shared.Configuration.SearchConstants;
 
 namespace Lfm.Cli;
 
@@ -94,20 +96,63 @@ class Program
                     return new CachedLastFmApiClient(innerClient, cacheStorage, keyGenerator, logger, configManager, 10);
                 });
 
-                // Register IMusicDataProvider - abstraction over data sources
-                // Currently uses Last.fm API only (via LastFmDataProvider adapter)
-                // Future: Support local files (Spotify/YouTube exports) and merged sources
+                // Register AlbumEnrichmentService for local file provider
+                services.AddSingleton<Lfm.Core.Services.Enrichment.AlbumEnrichmentService>(serviceProvider =>
+                {
+                    var logger = serviceProvider.GetRequiredService<ILogger<Lfm.Core.Services.Enrichment.AlbumEnrichmentService>>();
+                    var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
+                    var config = configManager.LoadAsync().GetAwaiter().GetResult();
+
+                    // No enrichers registered yet - enrichment disabled by default
+                    var enrichers = new List<Lfm.Core.Services.Enrichment.IAlbumEnricher>();
+
+                    return new Lfm.Core.Services.Enrichment.AlbumEnrichmentService(
+                        logger,
+                        config.AlbumEnrichment,
+                        enrichers);
+                });
+
+                // Register IMusicDataProvider - factory pattern based on configuration
+                // Supports: Last.fm API, Local Files, or Merged (API + Local Files)
                 services.AddSingleton<IMusicDataProvider>(serviceProvider =>
+                {
+                    var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
+                    var config = configManager.LoadAsync().GetAwaiter().GetResult();
+
+                    return config.DataSource switch
+                    {
+                        DataSourceMode.LastFm => CreateLastFmProvider(serviceProvider),
+                        DataSourceMode.LocalFiles => CreateLocalFileProvider(serviceProvider),
+                        DataSourceMode.Merged => CreateMergedProvider(serviceProvider),
+                        _ => CreateLastFmProvider(serviceProvider) // Default to LastFm for safety
+                    };
+                });
+
+                // Factory methods for data providers
+                static IMusicDataProvider CreateLastFmProvider(IServiceProvider serviceProvider)
                 {
                     var apiClient = serviceProvider.GetRequiredService<ILastFmApiClient>();
                     var logger = serviceProvider.GetRequiredService<ILogger<LastFmDataProvider>>();
-
-                    // Phase 1: Last.fm API only (maintains existing behavior)
                     return new LastFmDataProvider(apiClient, logger);
-                });
+                }
+
+                static IMusicDataProvider CreateLocalFileProvider(IServiceProvider serviceProvider)
+                {
+                    var enrichmentService = serviceProvider.GetRequiredService<Lfm.Core.Services.Enrichment.AlbumEnrichmentService>();
+                    return new Lfm.Core.Services.LocalFiles.LocalFileDataProvider(enrichmentService);
+                }
+
+                static IMusicDataProvider CreateMergedProvider(IServiceProvider serviceProvider)
+                {
+                    var apiProvider = CreateLastFmProvider(serviceProvider);
+                    var localProvider = CreateLocalFileProvider(serviceProvider);
+                    var logger = serviceProvider.GetRequiredService<ILogger<MergedDataProvider>>();
+                    return new MergedDataProvider(apiProvider, localProvider, logger);
+                }
 
                 services.AddTransient<IDisplayService, DisplayService>();
                 services.AddTransient<ITagFilterService, TagFilterService>();
+                services.AddTransient<IRecommendationEngine, RecommendationEngine>();
 
                 // Spotify services (register first so we can inject into LastFmService)
                 services.AddTransient<Lfm.Spotify.IPlaylistStreamer>(serviceProvider =>
@@ -129,13 +174,14 @@ class Program
                 // Service layer
                 services.AddTransient<ILastFmService>(serviceProvider =>
                 {
-                    var apiClient = serviceProvider.GetRequiredService<ILastFmApiClient>();
+                    var dataProvider = serviceProvider.GetRequiredService<IMusicDataProvider>();
                     var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
                     var tagFilterService = serviceProvider.GetRequiredService<ITagFilterService>();
+                    var recommendationEngine = serviceProvider.GetRequiredService<IRecommendationEngine>();
                     var logger = serviceProvider.GetRequiredService<ILogger<LastFmService>>();
                     var spotifyStreamer = serviceProvider.GetRequiredService<Lfm.Spotify.IPlaylistStreamer>();
 
-                    return new LastFmService(apiClient, configManager, tagFilterService, logger, spotifyStreamer);
+                    return new LastFmService(dataProvider, configManager, tagFilterService, recommendationEngine, logger, spotifyStreamer);
                 });
                 services.AddTransient<ISpotifyStreamingService, SpotifyStreamingService>();
                 services.AddTransient<IPlaylistInputParser, PlaylistInputParser>();
@@ -170,41 +216,47 @@ class Program
                 // Artist search commands using generic implementation
                 services.AddTransient<ArtistSearchCommand<Track, TopTracks>>(serviceProvider =>
                 {
-                    var apiClient = serviceProvider.GetRequiredService<ILastFmApiClient>();
+                    var dataProvider = serviceProvider.GetRequiredService<IMusicDataProvider>();
                     var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
                     var displayService = serviceProvider.GetRequiredService<IDisplayService>();
                     var logger = serviceProvider.GetRequiredService<ILogger<ArtistSearchCommand<Track, TopTracks>>>();
                     var symbolProvider = serviceProvider.GetRequiredService<ISymbolProvider>();
-                    
+
                     return new ArtistSearchCommand<Track, TopTracks>(
-                        apiClient,
+                        dataProvider,
                         configManager,
                         displayService,
                         logger,
                         symbolProvider,
                         "tracks",
-                        (user, period, limit, page) => apiClient.GetTopTracksAsync(user, period, limit, page),
+                        async (user, period, limit, page) => {
+                            var result = await dataProvider.GetTopTracksAsync(user, LastFmPeriodExtensions.ParsePeriod(period), limit, page);
+                            return result.IsSuccess ? result.Data : null;
+                        },
                         response => response.Tracks,
                         track => track.Artist.Name,
                         (tracks, startRank) => displayService.DisplayTracksForUser(tracks, startRank));
                 });
-                
+
                 services.AddTransient<ArtistSearchCommand<Album, TopAlbums>>(serviceProvider =>
                 {
-                    var apiClient = serviceProvider.GetRequiredService<ILastFmApiClient>();
+                    var dataProvider = serviceProvider.GetRequiredService<IMusicDataProvider>();
                     var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
                     var displayService = serviceProvider.GetRequiredService<IDisplayService>();
                     var logger = serviceProvider.GetRequiredService<ILogger<ArtistSearchCommand<Album, TopAlbums>>>();
                     var symbolProvider = serviceProvider.GetRequiredService<ISymbolProvider>();
-                    
+
                     return new ArtistSearchCommand<Album, TopAlbums>(
-                        apiClient,
+                        dataProvider,
                         configManager,
                         displayService,
                         logger,
                         symbolProvider,
                         "albums",
-                        (user, period, limit, page) => apiClient.GetTopAlbumsAsync(user, period, limit, page),
+                        async (user, period, limit, page) => {
+                            var result = await dataProvider.GetTopAlbumsAsync(user, LastFmPeriodExtensions.ParsePeriod(period), limit, page);
+                            return result.IsSuccess ? result.Data : null;
+                        },
                         response => response.Albums,
                         album => album.Artist.Name,
                         (albums, startRank) => displayService.DisplayAlbums(albums, startRank));

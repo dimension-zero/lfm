@@ -1,7 +1,9 @@
 using System.Diagnostics;
+using Lfm.Shared.Services;
 using System.Text.Json;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 using Lfm.Core.Services;
 using Lfm.Core.Services.Cache;
 using Microsoft.Extensions.Logging;
@@ -14,20 +16,20 @@ namespace Lfm.Cli.Commands;
 /// </summary>
 public class BenchmarkCacheCommand
 {
-    private readonly ILastFmApiClient _apiClient;
+    private readonly IMusicDataProvider _dataProvider;
     private readonly ICacheStorage _cacheStorage;
     private readonly ICacheKeyGenerator _keyGenerator;
     private readonly IConfigurationManager _configManager;
     private readonly ILogger<BenchmarkCacheCommand> _logger;
 
     public BenchmarkCacheCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         ICacheStorage cacheStorage,
         ICacheKeyGenerator keyGenerator,
         IConfigurationManager configManager,
         ILogger<BenchmarkCacheCommand> logger)
     {
-        _apiClient = apiClient ?? throw new ArgumentNullException(nameof(apiClient));
+        _dataProvider = dataProvider ?? throw new ArgumentNullException(nameof(dataProvider));
         _cacheStorage = cacheStorage ?? throw new ArgumentNullException(nameof(cacheStorage));
         _keyGenerator = keyGenerator ?? throw new ArgumentNullException(nameof(keyGenerator));
         _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
@@ -105,9 +107,9 @@ public class BenchmarkCacheCommand
         for (int i = 0; i < iterations; i++)
         {
             var stopwatch = Stopwatch.StartNew();
-            
-            var result = await _apiClient.GetTopTracksAsync(username, "overall", 50, 1);
-            
+
+            var result = await _dataProvider.GetTopTracksAsync(username, LastFmPeriodExtensions.ParsePeriod("overall"), 50, 1);
+
             stopwatch.Stop();
             times.Add(stopwatch.ElapsedMilliseconds);
 
@@ -143,7 +145,7 @@ public class BenchmarkCacheCommand
         string sampleJson;
         if (!skipApiCalls)
         {
-            var sampleResult = await _apiClient.GetTopTracksAsync(username, "overall", 50, 1);
+            var sampleResult = await _dataProvider.GetTopTracksAsync(username, LastFmPeriodExtensions.ParsePeriod("overall"), 50, 1);
             sampleJson = JsonSerializer.Serialize(sampleResult);
         }
         else
@@ -241,7 +243,7 @@ public class BenchmarkCacheCommand
                 
                 if (!exists)
                 {
-                    var result = await _apiClient.GetTopTracksAsync(username, "overall", 50, page);
+                    var result = await _dataProvider.GetTopTracksAsync(username, LastFmPeriodExtensions.ParsePeriod("overall"), 50, page);
                     if (result != null)
                     {
                         var json = JsonSerializer.Serialize(result);

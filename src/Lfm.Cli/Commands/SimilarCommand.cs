@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
@@ -11,11 +13,11 @@ namespace Lfm.Cli.Commands;
 public class SimilarCommand : BaseCommand
 {
     public SimilarCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ILogger<SimilarCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
     }
 
@@ -33,7 +35,7 @@ public class SimilarCommand : BaseCommand
                 Console.WriteLine($"Finding artists similar to {artist}...\n");
             }
 
-            var result = await _apiClient.GetSimilarArtistsWithResultAsync(artist, limit);
+            var result = await _dataProvider.GetSimilarArtistsAsync(artist, limit);
 
             stopwatch?.Stop();
 

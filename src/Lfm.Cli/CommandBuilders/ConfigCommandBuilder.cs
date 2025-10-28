@@ -111,6 +111,17 @@ public static class ConfigCommandBuilder
         var playerTypeArg = new Argument<string>("player", "Player type: Spotify or Sonos");
         setDefaultPlayerCommand.AddArgument(playerTypeArg);
 
+        // Data source configuration commands
+        var setDataSourceCommand = new Command("set-data-source", "Set data source for music statistics (LastFm, LocalFiles, or Merged)");
+        var dataSourceArg = new Argument<string>("source", "Data source: LastFm, LocalFiles, or Merged");
+        setDataSourceCommand.AddArgument(dataSourceArg);
+
+        var getDataSourceCommand = new Command("get-data-source", "Display current data source configuration");
+
+        var setLocalFilePathsCommand = new Command("set-local-file-paths", "Set paths to local music history files (comma-separated)");
+        var localPathsArg = new Argument<string>("paths", "Comma-separated file paths (e.g., \"/path/file1.json,/path/file2.json\")");
+        setLocalFilePathsCommand.AddArgument(localPathsArg);
+
         setApiKeyCommand.SetHandler(async (string apiKey) =>
         {
             var configCommand = services.GetRequiredService<ConfigCommand>();
@@ -291,6 +302,24 @@ public static class ConfigCommandBuilder
             await configCommand.SetDefaultPlayerAsync(playerType);
         }, playerTypeArg);
 
+        setDataSourceCommand.SetHandler(async (string dataSource) =>
+        {
+            var configCommand = services.GetRequiredService<ConfigCommand>();
+            await configCommand.SetDataSourceAsync(dataSource);
+        }, dataSourceArg);
+
+        getDataSourceCommand.SetHandler(async () =>
+        {
+            var configCommand = services.GetRequiredService<ConfigCommand>();
+            await configCommand.GetDataSourceAsync();
+        });
+
+        setLocalFilePathsCommand.SetHandler(async (string paths) =>
+        {
+            var configCommand = services.GetRequiredService<ConfigCommand>();
+            await configCommand.SetLocalFilePathsAsync(paths);
+        }, localPathsArg);
+
         command.AddCommand(setApiKeyCommand);
         command.AddCommand(setUserCommand);
         command.AddCommand(showCommand);
@@ -321,6 +350,9 @@ public static class ConfigCommandBuilder
         command.AddCommand(setSonosDefaultRoomCommand);
         command.AddCommand(clearSonosDefaultRoomCommand);
         command.AddCommand(setDefaultPlayerCommand);
+        command.AddCommand(setDataSourceCommand);
+        command.AddCommand(getDataSourceCommand);
+        command.AddCommand(setLocalFilePathsCommand);
 
         return command;
     }

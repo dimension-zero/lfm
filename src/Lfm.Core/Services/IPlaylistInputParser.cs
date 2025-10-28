@@ -1,4 +1,4 @@
-using Lfm.Core.Models;
+using Lfm.Shared.Models;
 
 namespace Lfm.Core.Services;
 

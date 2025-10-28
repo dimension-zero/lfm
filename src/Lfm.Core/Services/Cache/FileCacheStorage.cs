@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Lfm.Core.Attributes;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -11,13 +13,16 @@ public class FileCacheStorage : ICacheStorage
 {
     private readonly ICacheDirectoryHelper _cacheDirectoryHelper;
     private readonly ILogger<FileCacheStorage> _logger;
+    private readonly IConfigurationManager _configManager;
 
     public FileCacheStorage(
         ICacheDirectoryHelper cacheDirectoryHelper,
-        ILogger<FileCacheStorage> logger)
+        ILogger<FileCacheStorage> logger,
+        IConfigurationManager configManager)
     {
         _cacheDirectoryHelper = cacheDirectoryHelper ?? throw new ArgumentNullException(nameof(cacheDirectoryHelper));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _configManager = configManager ?? throw new ArgumentNullException(nameof(configManager));
     }
 
     public async Task<bool> StoreAsync(string key, string jsonData, int expiryMinutes = 10)
@@ -46,6 +51,7 @@ public class FileCacheStorage : ICacheStorage
                 Key = key,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes),
+                LastAccessedAt = DateTime.UtcNow,
                 SizeBytes = System.Text.Encoding.UTF8.GetByteCount(jsonData)
             };
 
@@ -64,6 +70,7 @@ public class FileCacheStorage : ICacheStorage
         }
     }
 
+    [SuppressMessage("SilentFailure", "SF001", Justification = "Null return indicates cache miss, not error. Cache misses are expected behavior.")]
     public async Task<string?> RetrieveAsync(string key)
     {
         if (string.IsNullOrWhiteSpace(key))
@@ -99,6 +106,11 @@ public class FileCacheStorage : ICacheStorage
                 _ = Task.Run(() => RemoveAsync(key));
                 return null;
             }
+
+            // Update last accessed time for LRU tracking
+            metadata.LastAccessedAt = DateTime.UtcNow;
+            var updatedMetadataJson = JsonSerializer.Serialize(metadata, GetJsonOptions());
+            await File.WriteAllTextAsync(metaFilePath, updatedMetadataJson);
 
             // Read and return data
             var jsonData = await File.ReadAllTextAsync(dataFilePath);
@@ -353,15 +365,107 @@ public class FileCacheStorage : ICacheStorage
             var expiredRemoved = await CleanupExpiredAsync();
             _logger.LogDebug("Removed {Count} expired cache entries", expiredRemoved);
 
-            // Step 2: Check if we still need to remove more entries based on size/count limits
-            // (This would require config access - for now, just return expired count)
-            // TODO: Implement LRU cleanup based on config limits
+            // Step 2: Enforce cache size limit using LRU eviction
+            var lruRemoved = await EnforceCacheSizeLimitAsync();
+            if (lruRemoved > 0)
+            {
+                _logger.LogInformation("Removed {Count} cache entries to enforce size limit (LRU eviction)", lruRemoved);
+            }
 
-            return expiredRemoved;
+            return expiredRemoved + lruRemoved;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to perform cache cleanup");
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Enforces cache size limit by evicting least recently used entries
+    /// </summary>
+    private async Task<int> EnforceCacheSizeLimitAsync()
+    {
+        try
+        {
+            // Load configuration to get MaxCacheSizeMB
+            var config = await _configManager.LoadAsync();
+            var maxCacheSizeBytes = config.MaxCacheSizeMB * 1024 * 1024;
+
+            var cacheDir = _cacheDirectoryHelper.GetCacheDirectory();
+            if (!Directory.Exists(cacheDir))
+                return 0;
+
+            // Get all metadata files and their metadata
+            var metaFiles = Directory.GetFiles(cacheDir, "*.meta");
+            var cacheEntries = new List<(string metaFile, CacheMetadata metadata)>();
+
+            long totalSize = 0;
+            foreach (var metaFile in metaFiles)
+            {
+                try
+                {
+                    var metadataJson = await File.ReadAllTextAsync(metaFile);
+                    var metadata = JsonSerializer.Deserialize<CacheMetadata>(metadataJson, GetJsonOptions());
+
+                    if (metadata != null)
+                    {
+                        // Skip expired entries (already handled by CleanupExpiredAsync)
+                        if (DateTime.UtcNow <= metadata.ExpiresAt)
+                        {
+                            cacheEntries.Add((metaFile, metadata));
+                            totalSize += metadata.SizeBytes;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Failed to process metadata file {MetaFile} during LRU cleanup", metaFile);
+                }
+            }
+
+            // Check if we're over the size limit
+            if (totalSize <= maxCacheSizeBytes)
+            {
+                _logger.LogDebug("Cache size {SizeMB:F2} MB is within limit {MaxSizeMB} MB",
+                    totalSize / (1024.0 * 1024.0), config.MaxCacheSizeMB);
+                return 0;
+            }
+
+            _logger.LogInformation("Cache size {SizeMB:F2} MB exceeds limit {MaxSizeMB} MB - starting LRU eviction",
+                totalSize / (1024.0 * 1024.0), config.MaxCacheSizeMB);
+
+            // Sort by LastAccessedAt (oldest first) for LRU eviction
+            var sortedEntries = cacheEntries
+                .OrderBy(e => e.metadata.LastAccessedAt)
+                .ToList();
+
+            var removed = 0;
+            foreach (var (metaFile, metadata) in sortedEntries)
+            {
+                // Stop if we're now under the limit
+                if (totalSize <= maxCacheSizeBytes)
+                    break;
+
+                // Remove this cache entry
+                var success = await RemoveAsync(metadata.Key);
+                if (success)
+                {
+                    totalSize -= metadata.SizeBytes;
+                    removed++;
+                    _logger.LogDebug("Evicted cache entry {Key} (last accessed: {LastAccessed}, size: {SizeKB:F2} KB)",
+                        metadata.Key, metadata.LastAccessedAt, metadata.SizeBytes / 1024.0);
+                }
+            }
+
+            _logger.LogInformation("LRU eviction complete: removed {Count} entries, new cache size: {SizeMB:F2} MB",
+                removed, totalSize / (1024.0 * 1024.0));
+
+            return removed;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to enforce cache size limit");
             return 0;
         }
     }
@@ -384,5 +488,6 @@ internal class CacheMetadata
     public string Key { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime ExpiresAt { get; set; }
+    public DateTime LastAccessedAt { get; set; }
     public long SizeBytes { get; set; }
 }

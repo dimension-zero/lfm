@@ -1,3 +1,5 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Lfm.Spotify;
@@ -49,8 +51,8 @@ public class SkipCommand : BasePlaybackCommand
             {
                 // Convert Spotify SkipDirection to Sonos SkipDirection
                 var sonosDirection = direction == Lfm.Spotify.SkipDirection.Next
-                    ? Lfm.Sonos.SkipDirection.Next
-                    : Lfm.Sonos.SkipDirection.Previous;
+                    ? Lfm.Sonos.Models.SkipDirection.Next
+                    : Lfm.Sonos.Models.SkipDirection.Previous;
 
                 await _sonosStreamer.SkipAsync(targetRoom, sonosDirection);
                 Console.WriteLine($"⏭️  Skipped to {directionText} on Sonos room '{targetRoom}'");

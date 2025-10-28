@@ -1,7 +1,7 @@
 using System.CommandLine;
 using Lfm.Cli.Commands;
 using Microsoft.Extensions.DependencyInjection;
-using static Lfm.Core.Configuration.SearchConstants;
+using static Lfm.Shared.Configuration.SearchConstants;
 
 namespace Lfm.Cli.CommandBuilders;
 

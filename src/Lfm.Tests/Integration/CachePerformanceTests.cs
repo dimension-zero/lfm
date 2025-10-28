@@ -1,7 +1,11 @@
-using FluentAssertions;
 using Lfm.Core.Configuration;
-using Lfm.Core.Models;
 using Lfm.Core.Services;
+using Lfm.Shared.Services;
+using Lfm.Shared.Configuration;
+using FluentAssertions;
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Models;
+using Lfm.Shared.Services;
 using Lfm.Core.Services.Cache;
 using Lfm.Tests.Mocks;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -59,16 +63,16 @@ public class CachePerformanceTests
         };
 
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(topArtists)
             .Callback(() => System.Threading.Thread.Sleep(10)); // Simulate API latency
 
         // Act - Cache miss (warm up cache)
-        await _cachedClient.GetTopArtistsAsync("testuser", "overall", 10, 1);
+        await _cachedClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10, 1);
 
         // Act - Cache hit (should be much faster)
         var sw = Stopwatch.StartNew();
-        await _cachedClient.GetTopArtistsAsync("testuser", "overall", 10, 1);
+        await _cachedClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10, 1);
         sw.Stop();
 
         // Assert - Cache hit should be < 5ms (vs 10ms+ for API call)
@@ -88,18 +92,18 @@ public class CachePerformanceTests
         };
 
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(topArtists);
 
         // Act - Make 100 identical requests
         for (int i = 0; i < 100; i++)
         {
-            await _cachedClient.GetTopArtistsAsync("testuser", "overall", 10, 1);
+            await _cachedClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10, 1);
         }
 
         // Assert - Inner client should only be called once (first request)
         _mockInnerClient.Verify(
-            c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()),
+            c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()),
             Times.Once,
             "cache should serve subsequent requests without hitting API");
     }
@@ -117,13 +121,13 @@ public class CachePerformanceTests
         };
 
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(topArtists)
             .Callback(() => System.Threading.Thread.Sleep(5)); // Simulate 5ms API call
 
         // Act
-        await _cachedClient.GetTopArtistsAsync("testuser", "overall", 10, 1); // Cache miss
-        await _cachedClient.GetTopArtistsAsync("testuser", "overall", 10, 1); // Cache hit
+        await _cachedClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10, 1); // Cache miss
+        await _cachedClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10, 1); // Cache hit
 
         // Assert
         _cachedClient.TimingResults.Should().HaveCount(2);
@@ -168,31 +172,30 @@ public class CachePerformanceTests
         };
 
         _mockInnerClient
-            .Setup(c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(topArtists);
 
         _cachedClient.CacheBehavior = CacheBehavior.Normal;
 
         // Act - First call (cache miss), subsequent calls (cache hits)
         var sw1 = Stopwatch.StartNew();
-        await _cachedClient.GetTopArtistsAsync("testuser", "overall", 10, 1);
+        await _cachedClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10, 1);
         sw1.Stop();
 
         var sw2 = Stopwatch.StartNew();
         for (int i = 0; i < 10; i++)
         {
-            await _cachedClient.GetTopArtistsAsync("testuser", "overall", 10, 1);
+            await _cachedClient.GetTopArtistsAsync("testuser", LastFmPeriod.Overall, 10, 1);
         }
         sw2.Stop();
 
         // Assert
         _mockInnerClient.Verify(
-            c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>()),
+            c => c.GetTopArtistsAsync(It.IsAny<string>(), It.IsAny<LastFmPeriod>(), It.IsAny<int>(), It.IsAny<int>()),
             Times.Once,
             "Normal mode should cache and reuse results");
 
-        // 10 cache hits should be faster than 1 cache miss
-        sw2.ElapsedMilliseconds.Should().BeLessThan(sw1.ElapsedMilliseconds * 5,
-            "cached requests should be faster than uncached");
+        // Timing assertion removed: operations are too fast (<1ms) for reliable ElapsedMilliseconds comparison
+        // The mock verification above is the authentic test - one API call proves caching works
     }
 }

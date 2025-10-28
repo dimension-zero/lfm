@@ -1,5 +1,6 @@
-using Lfm.Core.Models;
-using Lfm.Core.Models.Results;
+using Lfm.Shared.Models;
+using Lfm.Shared.Models.Results;
+using Lfm.Shared.Configuration;
 using Lfm.Core.Services;
 using Microsoft.Extensions.Logging;
 
@@ -24,7 +25,7 @@ public class LastFmMcpClient
     /// Get user's top artists with transformation rules applied.
     /// Token optimization: Strips Url, Mbid (50% reduction target)
     /// </summary>
-    public async Task<Result<List<CompactArtist>>> GetTopArtistsAsync(string username, string period = "overall", int limit = 10)
+    public async Task<Result<List<CompactArtist>>> GetTopArtistsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10)
     {
         var result = await _apiClient.GetTopArtistsWithResultAsync(username, period, limit);
 
@@ -48,7 +49,7 @@ public class LastFmMcpClient
     /// Property flattening: Track.Artist.Name → artist
     /// Token optimization: Strips Url, Mbid
     /// </summary>
-    public async Task<Result<List<CompactTrack>>> GetTopTracksAsync(string username, string period = "overall", int limit = 10)
+    public async Task<Result<List<CompactTrack>>> GetTopTracksAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10)
     {
         var result = await _apiClient.GetTopTracksWithResultAsync(username, period, limit);
 
@@ -73,7 +74,7 @@ public class LastFmMcpClient
     /// Property flattening: Album.Artist.Name → artist
     /// Token optimization: Strips Url, Mbid
     /// </summary>
-    public async Task<Result<List<CompactAlbum>>> GetTopAlbumsAsync(string username, string period = "overall", int limit = 10)
+    public async Task<Result<List<CompactAlbum>>> GetTopAlbumsAsync(string username, LastFmPeriod period = LastFmPeriod.Overall, int limit = 10)
     {
         var result = await _apiClient.GetTopAlbumsWithResultAsync(username, period, limit);
 

@@ -1,3 +1,5 @@
+using Lfm.Shared.Configuration;
+using Lfm.Shared.Services;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Lfm.Core.Services.Cache;
@@ -13,12 +15,12 @@ public class CacheStatusCommand : BaseCommand
     private readonly ICacheStorage _cacheStorage;
 
     public CacheStatusCommand(
-        ILastFmApiClient apiClient,
+        IMusicDataProvider dataProvider,
         IConfigurationManager configManager,
         ICacheStorage cacheStorage,
         ILogger<CacheStatusCommand> logger,
         ISymbolProvider symbolProvider)
-        : base(apiClient, configManager, logger, symbolProvider)
+        : base(dataProvider, configManager, logger, symbolProvider)
     {
         _cacheStorage = cacheStorage ?? throw new ArgumentNullException(nameof(cacheStorage));
     }
