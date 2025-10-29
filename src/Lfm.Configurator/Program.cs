@@ -1,5 +1,7 @@
 using Lfm.Configurator;
 using Lfm.Core.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Spectre.Console;
 
 AnsiConsole.MarkupLine("[bold cyan]Lfm Configuration Utility[/]");
@@ -10,10 +12,15 @@ AnsiConsole.WriteLine();
 
 try
 {
-    var baseDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "lfm");
-    Directory.CreateDirectory(baseDir);
+    // Set up dependency injection
+    var services = new ServiceCollection();
+    services.AddLogging(builder => builder.AddConsole());
+    var serviceProvider = services.BuildServiceProvider();
 
-    var configManager = new ConfigurationManager(baseDir, null);
+    var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+    var logger = loggerFactory.CreateLogger<ConfigurationManager>();
+
+    var configManager = new ConfigurationManager(logger);
     var config = await configManager.LoadAsync();
 
     var app = new ConfiguratorApp(configManager, config);

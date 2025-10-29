@@ -47,16 +47,16 @@ public class ConfiguratorApp
             switch (choice)
             {
                 case 1:
-                    await ConfigureLastFmAsync();
+                    ConfigureLastFmAsync();
                     break;
                 case 2:
-                    await ConfigureSpotifyAsync();
+                    ConfigureSpotifyAsync();
                     break;
                 case 3:
-                    await ConfigureSonosAsync();
+                    ConfigureSonosAsync();
                     break;
                 case 4:
-                    await ConfigureCacheAsync();
+                    ConfigureCacheAsync();
                     break;
                 case 5:
                     DisplayConfiguration();
@@ -94,7 +94,7 @@ public class ConfiguratorApp
         AnsiConsole.Write(panel);
     }
 
-    private async Task ConfigureLastFmAsync()
+    private void ConfigureLastFmAsync()
     {
         AnsiConsole.Clear();
         AnsiConsole.MarkupLine("[bold cyan]Last.fm Configuration[/]");
@@ -127,7 +127,7 @@ public class ConfiguratorApp
         }
     }
 
-    private async Task ConfigureSpotifyAsync()
+    private void ConfigureSpotifyAsync()
     {
         AnsiConsole.Clear();
         AnsiConsole.MarkupLine("[bold cyan]Spotify Configuration[/]");
@@ -156,7 +156,7 @@ public class ConfiguratorApp
         }
     }
 
-    private async Task ConfigureSonosAsync()
+    private void ConfigureSonosAsync()
     {
         AnsiConsole.Clear();
         AnsiConsole.MarkupLine("[bold cyan]Sonos Configuration[/]");
@@ -189,7 +189,7 @@ public class ConfiguratorApp
         }
     }
 
-    private async Task ConfigureCacheAsync()
+    private void ConfigureCacheAsync()
     {
         AnsiConsole.Clear();
         AnsiConsole.MarkupLine("[bold cyan]Cache Configuration[/]");
