@@ -1,6 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Order;
-using Lfm.EfModels.Utilities;
+using Lfm.Data.EF.Utilities;
 
 namespace Lfm.Tests.Benchmarks;
 

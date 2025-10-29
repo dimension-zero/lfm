@@ -1,9 +1,11 @@
+using Lfm.Data.Direct;
+using Lfm.Shared.Interfaces;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
 using Lfm.Shared.Services;
 using Lfm.Shared.Configuration;
 using FluentAssertions;
-using Lfm.Core.Services.Cache;
+using Lfm.Data.Direct.Cache;
 
 namespace Lfm.Tests.Unit.Services;
 

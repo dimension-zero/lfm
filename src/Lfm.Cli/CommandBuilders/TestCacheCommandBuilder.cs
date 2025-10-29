@@ -2,7 +2,7 @@ using System.CommandLine;
 using Lfm.Cli.Commands;
 using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
-using Lfm.Core.Services.Cache;
+using Lfm.Data.Direct.Cache;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

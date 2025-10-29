@@ -112,7 +112,7 @@ private void VisitWhere(MethodCallExpression node)
 **Expression Tree Inspection**:
 ```
 Full Expression Tree:
-value(Lfm.EfModels.Provider.LastFmQueryable`1[Track]).Where(t => (t.ArtistName == "Pink Floyd")).Take(5)
+value(Lfm.Data.EF.Provider.LastFmQueryable`1[Track]).Where(t => (t.ArtistName == "Pink Floyd")).Take(5)
 
 [VisitWhere] arg1.NodeType=Quote ← THE PROBLEM!
 [VisitWhere] arg1.Type=System.Linq.Expressions.Expression`1[System.Func`2[Track,Boolean]]
@@ -213,9 +213,9 @@ dotnet test src/Lfm.Tests -c Release --filter "FullyQualifiedName~ArtistTopAlbum
 ## Files Modified This Session
 
 **Primary Work**:
-1. `src/Lfm.EfModels/Provider/LastFmQueryProvider.cs` - Fixed type handling, added logging
+1. `src/Lfm.Data.EF/Provider/LastFmQueryProvider.cs` - Fixed type handling, added logging
 2. `src/Lfm.Tests/OriginalVsEfComparisonTests.cs` - Added mock verification
-3. `src/Lfm.EfModels/Provider/QueryTranslator.cs` - Added logging
+3. `src/Lfm.Data.EF/Provider/QueryTranslator.cs` - Added logging
 
 **Test Status**:
 - All comparison tests run successfully (9 pass, 2 fail)
@@ -247,7 +247,7 @@ dotnet test src/Lfm.Tests -c Release --filter "FullyQualifiedName~ArtistTopAlbum
 ## Files Modified These Sessions
 
 **Session 2 - Quote Unwrapping Fix**:
-1. `src/Lfm.EfModels/Provider/LastFmExpressionVisitor.cs` - Added Quote unwrapping in VisitWhere (4 lines)
+1. `src/Lfm.Data.EF/Provider/LastFmExpressionVisitor.cs` - Added Quote unwrapping in VisitWhere (4 lines)
 2. `src/Lfm.Tests/ExpressionVisitorDebugTests.cs` - Created debug test (45 lines)
 
 **Session 3 - Benchmarks & Documentation**:

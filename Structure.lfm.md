@@ -218,14 +218,14 @@ src/Lfm.Shared/
 
 ---
 
-### **Lfm.EfModels** - EF Core LINQ Provider
+### **Lfm.Data.EF** - EF Core LINQ Provider
 **Purpose**: Custom EF Core query provider for LINQ over Last.fm API
 **Target Framework**: .NET 9
 **Lines of Code**: ~3,500
 
 ```
-src/Lfm.EfModels/
-├── Lfm.EfModels.csproj              # Project file
+src/Lfm.Data.EF/
+├── Lfm.Data.EF.csproj              # Project file
 ├── LfmDbContext.cs                  # DbContext with Artists/Tracks/Albums/RecentTracks
 ├── README.md                        # Usage documentation
 │
@@ -556,7 +556,7 @@ transformation-rules/
 Lfm.Cli
   ├── Lfm.Core
   │   ├── Lfm.Shared
-  │   └── Lfm.EfModels
+  │   └── Lfm.Data.EF
   │       └── Lfm.Shared
   ├── Lfm.Spotify
   │   └── Lfm.Shared
@@ -566,12 +566,12 @@ Lfm.Cli
 Lfm.McpServer
   ├── Lfm.Core
   │   ├── Lfm.Shared
-  │   └── Lfm.EfModels
+  │   └── Lfm.Data.EF
   └── Lfm.Shared
 
 Lfm.Tests
   ├── Lfm.Core
-  ├── Lfm.EfModels
+  ├── Lfm.Data.EF
   ├── Lfm.Shared
   └── Lfm.McpServer
 ```
@@ -587,7 +587,7 @@ Lfm.Tests
 | **Lfm.Cli** | ~85 | ~5,000 | CLI interface and commands |
 | **Lfm.Core** | ~45 | ~8,000 | Core business logic and services |
 | **Lfm.Shared** | ~20 | ~1,500 | Shared models and interfaces |
-| **Lfm.EfModels** | ~25 | ~3,500 | EF Core LINQ query provider |
+| **Lfm.Data.EF** | ~25 | ~3,500 | EF Core LINQ query provider |
 | **Lfm.Spotify** | ~10 | ~2,000 | Spotify integration |
 | **Lfm.Sonos** | ~6 | ~800 | Sonos integration |
 | **Lfm.McpServer** | ~3 | ~400 | MCP server (C# PoC) |
@@ -619,8 +619,8 @@ Lfm.Tests
 | **lfm-mcp-release/server.js** | 2,347 | Production MCP server with 28 tools |
 | **src/Lfm.Core/Services/LastFmApiClient.cs** | ~800 | Last.fm API HTTP client |
 | **src/Lfm.Core/Services/CachedLastFmApiClient.cs** | ~500 | Caching decorator (119x perf improvement) |
-| **src/Lfm.EfModels/Provider/LastFmExpressionVisitor.cs** | ~350 | LINQ expression tree analyzer |
-| **src/Lfm.EfModels/Provider/ResultMapper.cs** | ~300 | API response → EF entity mapping |
+| **src/Lfm.Data.EF/Provider/LastFmExpressionVisitor.cs** | ~350 | LINQ expression tree analyzer |
+| **src/Lfm.Data.EF/Provider/ResultMapper.cs** | ~300 | API response → EF entity mapping |
 | **src/Lfm.Cli/Program.cs** | ~400 | Application entry point and DI setup |
 | **src/Lfm.Cli/Commands/CheckCommand.cs** | ~600 | Check if user listened to track/album |
 | **src/Lfm.Cli/Commands/PlayCommand.cs** | ~500 | Unified play command (Spotify/Sonos) |
@@ -628,7 +628,7 @@ Lfm.Tests
 | **src/Lfm.Core/Services/RecommendationEngine.cs** | ~400 | Music recommendation algorithm |
 | **src/Lfm.Spotify/SpotifyStreamer.cs** | ~800 | Spotify integration facade |
 | **src/Lfm.Sonos/SonosStreamer.cs** | ~400 | Sonos integration facade |
-| **src/Lfm.EfModels/LfmDbContext.cs** | ~115 | EF Core DbContext |
+| **src/Lfm.Data.EF/LfmDbContext.cs** | ~115 | EF Core DbContext |
 | **src/Lfm.Shared/Services/IMusicDataProvider.cs** | ~55 | Multi-source abstraction (15 methods) |
 | **src/Lfm.Tests/OriginalVsEfComparisonTests.cs** | ~400 | Original vs EF Core comparison (11 tests) |
 | **docs/LFM2EF-SUMMARY.md** | 470 | lfm2EF branch summary and learnings |
@@ -697,7 +697,7 @@ publish/                             # Published binaries (gitignored)
 | **Microsoft.Extensions.DependencyInjection** | 9.0.0 | All | DI container |
 | **Microsoft.Extensions.Logging** | 9.0.0 | All | Logging |
 | **Microsoft.Extensions.Http** | 9.0.0 | Lfm.Core | HTTP client factory |
-| **Microsoft.EntityFrameworkCore** | 9.0.0 | Lfm.EfModels | EF Core |
+| **Microsoft.EntityFrameworkCore** | 9.0.0 | Lfm.Data.EF | EF Core |
 | **xunit.v3** | 3.1.0 | Lfm.Tests | Unit testing |
 | **BenchmarkDotNet** | 0.15.4 | Lfm.Tests | Performance benchmarks |
 | **FluentAssertions** | 7.0.0 | Lfm.Tests | Assertion library |

@@ -27,7 +27,7 @@ The `lfm2EF` branch represents a comprehensive architectural transformation that
 
 ### 1. New Projects Added
 
-#### **Lfm.EfModels** (25 C# files)
+#### **Lfm.Data.EF** (25 C# files)
 Full EF Core LINQ provider for Last.fm API with custom query translation.
 
 **Key Components**:
@@ -616,7 +616,7 @@ src/Lfm.Tests/
 
 | Project | Files | Purpose |
 |---------|-------|---------|
-| **Lfm.EfModels** | 25 | EF Core LINQ provider |
+| **Lfm.Data.EF** | 25 | EF Core LINQ provider |
 | **Lfm.Shared** | 20 | Shared models and interfaces |
 | **Lfm.Tests** | 40+ | Unit, integration, benchmark tests |
 | **Lfm.McpServer** | 4 | MCP server (Phase 2) |
@@ -725,7 +725,7 @@ services.AddDbContext<LfmDbContext>(options =>
 **EF Core Provider** (lfm2EF branch):
 - **Role**: LINQ query provider with data enrichment
 - **Behavior**: Transforms data (normalizes, injects metadata, flattens)
-- **Location**: `src/Lfm.EfModels/Provider/ResultMapper.cs`
+- **Location**: `src/Lfm.Data.EF/Provider/ResultMapper.cs`
 
 **Why Different**:
 - API client should be thin (testing, caching, reuse)
@@ -793,7 +793,7 @@ Build Output:
 
 Projects Built:
 ✅ Lfm.Shared
-✅ Lfm.EfModels
+✅ Lfm.Data.EF
 ✅ Lfm.Core (unchanged)
 ✅ Lfm.Cli (unchanged)
 ✅ Lfm.Tests
@@ -838,7 +838,7 @@ Original vs EF Core Comparison Tests: 11/11 passed
 
 | Aspect | Master Branch | lfm2EF Branch |
 |--------|--------------|---------------|
-| **Projects** | 5 projects | 7 projects (+Lfm.EfModels, +Lfm.Shared) |
+| **Projects** | 5 projects | 7 projects (+Lfm.Data.EF, +Lfm.Shared) |
 | **Data Access** | Direct API client calls | LINQ queries via DbContext |
 | **Error Handling** | Try-catch, nullable returns | Result<T> pattern |
 | **Apostrophe Handling** | Manual retry logic (3 attempts) | Centralized normalization (single attempt) |

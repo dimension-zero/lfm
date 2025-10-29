@@ -407,7 +407,7 @@ Both implementations use the same `CachedLastFmApiClient`:
 ```xml
 <ItemGroup>
   <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
-  <ProjectReference Include="..\Lfm.EfModels\Lfm.EfModels.csproj" />
+  <ProjectReference Include="..\Lfm.Data.EF\Lfm.Data.EF.csproj" />
 </ItemGroup>
 ```
 
@@ -697,7 +697,7 @@ The EF Core LINQ provider adds a powerful, type-safe query interface on top of t
 
 ## References
 
-- **Implementation**: See `src/Lfm.EfModels/README.md` for architecture details
+- **Implementation**: See `src/Lfm.Data.EF/README.md` for architecture details
 - **Testing**: See `src/Lfm.Tests/OriginalVsEfComparisonTests.cs` for test cases
 - **Benchmarks**: See `src/Lfm.Tests/EfProviderPerformanceBenchmarks.cs` for performance validation
 - **Handover Document**: See `Handover.md` for implementation session notes

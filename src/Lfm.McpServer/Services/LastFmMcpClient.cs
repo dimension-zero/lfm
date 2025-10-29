@@ -1,3 +1,4 @@
+using Lfm.Shared.Interfaces;
 using Lfm.Shared.Models;
 using Lfm.Shared.Models.Results;
 using Lfm.Shared.Configuration;

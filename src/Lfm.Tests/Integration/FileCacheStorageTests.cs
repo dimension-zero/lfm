@@ -3,9 +3,8 @@ using Lfm.Core.Services;
 using Lfm.Shared.Services;
 using Lfm.Shared.Configuration;
 using FluentAssertions;
-using Lfm.Shared.Configuration;
 using Lfm.Shared.Models.Results;
-using Lfm.Core.Services.Cache;
+using Lfm.Data.Direct.Cache;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Lfm.Tests.Integration;

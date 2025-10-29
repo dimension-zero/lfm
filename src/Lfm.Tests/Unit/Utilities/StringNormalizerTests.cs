@@ -1,4 +1,4 @@
-using Lfm.EfModels.Utilities;
+using Lfm.Data.EF.Utilities;
 using Xunit;
 
 namespace Lfm.Tests.Unit.Utilities;

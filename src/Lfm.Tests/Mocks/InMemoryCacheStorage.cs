@@ -3,7 +3,7 @@ using Lfm.Core.Services;
 using Lfm.Shared.Services;
 using Lfm.Shared.Configuration;
 using Lfm.Core.Attributes;
-using Lfm.Core.Services.Cache;
+using Lfm.Data.Direct.Cache;
 
 namespace Lfm.Tests.Mocks;
 

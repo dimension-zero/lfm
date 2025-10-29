@@ -1,7 +1,9 @@
-using Lfm.EfModels;
-using Lfm.EfModels.Entities;
-using Lfm.EfModels.Extensions;
-using Lfm.EfModels.Provider;
+using Lfm.Data.Direct;
+using Lfm.Shared.Interfaces;
+using Lfm.Data.EF;
+using Lfm.Data.EF.Entities;
+using Lfm.Data.EF.Extensions;
+using Lfm.Data.EF.Provider;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 
@@ -13,7 +15,7 @@ public class ExpressionVisitorDebugTests
     public void ExpressionVisitor_ExtractsArtistName_FromTrackQuery()
     {
         // Arrange
-        var mockClient = new Mock<Core.Services.ILastFmApiClient>();
+        var mockClient = new Mock<ILastFmApiClient>();
         var options = new DbContextOptionsBuilder<LfmDbContext>()
             .UseLastFm(mockClient.Object, "testuser")
             .Options;

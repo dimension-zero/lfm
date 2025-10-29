@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using Lfm.Core.Services;
-using Lfm.EfModels;
-using Lfm.EfModels.Entities;
-using Lfm.EfModels.Extensions;
+using Lfm.Data.EF;
+using Lfm.Data.EF.Entities;
+using Lfm.Data.EF.Extensions;
 using Lfm.Shared.Configuration;
 using Lfm.Shared.Models;
 using Lfm.Tests.Mocks;
@@ -274,7 +274,7 @@ public class EfProviderPerformanceBenchmarks
                 .Take(10);
 
             // Extract expression and analyze it (what visitor does)
-            var expression = ((IQueryable<Lfm.EfModels.Entities.Track>)query).Expression;
+            var expression = ((IQueryable<Lfm.Data.EF.Entities.Track>)query).Expression;
 
             sw.Stop();
             times.Add(sw.Elapsed.Ticks / 10); // Convert to microseconds

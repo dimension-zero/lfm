@@ -1,6 +1,7 @@
 using Lfm.Shared.Configuration;
 using Lfm.Core.Configuration;
 using Lfm.Shared.Models;
+using Lfm.Shared.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Lfm.Core.Services;

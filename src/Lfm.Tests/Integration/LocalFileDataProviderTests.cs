@@ -1,6 +1,6 @@
 using Lfm.Core.Configuration;
-using Lfm.Core.Services.Enrichment;
-using Lfm.Core.Services.LocalFiles;
+using Lfm.Data.Direct.Enrichment;
+using Lfm.Data.Direct.LocalFiles;
 using Lfm.Shared.Configuration;
 using Lfm.Shared.Models.Results;
 using FluentAssertions;

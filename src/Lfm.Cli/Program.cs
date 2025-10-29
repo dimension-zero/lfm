@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Lfm.Shared.Interfaces;
 using Lfm.Cli.CommandBuilders;
 using Lfm.Cli.Commands;
 using Lfm.Cli.Services;
@@ -7,7 +8,9 @@ using Lfm.Core.Configuration;
 using Lfm.Shared.Models;
 using Lfm.Shared.Services;
 using Lfm.Core.Services;
-using Lfm.Core.Services.Cache;
+using Lfm.Data.Direct;
+using Lfm.Data.Direct.Cache;
+using Lfm.Data.Direct.LocalFiles;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -97,16 +100,16 @@ class Program
                 });
 
                 // Register AlbumEnrichmentService for local file provider
-                services.AddSingleton<Lfm.Core.Services.Enrichment.AlbumEnrichmentService>(serviceProvider =>
+                services.AddSingleton<Lfm.Data.Direct.Enrichment.AlbumEnrichmentService>(serviceProvider =>
                 {
-                    var logger = serviceProvider.GetRequiredService<ILogger<Lfm.Core.Services.Enrichment.AlbumEnrichmentService>>();
+                    var logger = serviceProvider.GetRequiredService<ILogger<Lfm.Data.Direct.Enrichment.AlbumEnrichmentService>>();
                     var configManager = serviceProvider.GetRequiredService<IConfigurationManager>();
                     var config = configManager.LoadAsync().GetAwaiter().GetResult();
 
                     // No enrichers registered yet - enrichment disabled by default
-                    var enrichers = new List<Lfm.Core.Services.Enrichment.IAlbumEnricher>();
+                    var enrichers = new List<Lfm.Data.Direct.Enrichment.IAlbumEnricher>();
 
-                    return new Lfm.Core.Services.Enrichment.AlbumEnrichmentService(
+                    return new Lfm.Data.Direct.Enrichment.AlbumEnrichmentService(
                         logger,
                         config.AlbumEnrichment,
                         enrichers);
@@ -138,8 +141,8 @@ class Program
 
                 static IMusicDataProvider CreateLocalFileProvider(IServiceProvider serviceProvider)
                 {
-                    var enrichmentService = serviceProvider.GetRequiredService<Lfm.Core.Services.Enrichment.AlbumEnrichmentService>();
-                    return new Lfm.Core.Services.LocalFiles.LocalFileDataProvider(enrichmentService);
+                    var enrichmentService = serviceProvider.GetRequiredService<Lfm.Data.Direct.Enrichment.AlbumEnrichmentService>();
+                    return new Lfm.Data.Direct.LocalFiles.LocalFileDataProvider(enrichmentService);
                 }
 
                 static IMusicDataProvider CreateMergedProvider(IServiceProvider serviceProvider)

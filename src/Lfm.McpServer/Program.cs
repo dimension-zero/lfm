@@ -1,6 +1,8 @@
+using Lfm.Data.Direct;
+using Lfm.Shared.Interfaces;
 using Lfm.Core.Configuration;
 using Lfm.Core.Services;
-using Lfm.Core.Services.Cache;
+using Lfm.Data.Direct.Cache;
 using Lfm.McpServer.Services;
 using Lfm.McpServer.Tools;
 using Microsoft.Extensions.DependencyInjection;

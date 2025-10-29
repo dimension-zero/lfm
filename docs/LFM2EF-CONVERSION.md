@@ -284,14 +284,14 @@ src/
 ├── Lfm.Schema/                          # NEW PROJECT
 │   ├── LastFmSchemaDiscovery.cs        # Heuristic discovery
 │   └── LastFmApiModel.cs               # Discovered schema
-├── Lfm.EfModels/                       # NEW PROJECT (Generated)
+├── Lfm.Data.EF/                       # NEW PROJECT (Generated)
 │   ├── LastFmContext.cs                # Generated DbContext
 │   ├── Entities/                       # Generated entities
 │   │   ├── Artist.cs
 │   │   ├── Track.cs
 │   │   ├── Album.cs
 │   │   └── ...
-│   └── Lfm.EfModels.csproj
+│   └── Lfm.Data.EF.csproj
 ├── Lfm.Transformation/                 # NEW PROJECT
 │   ├── TransformationRules.cs          # Rules model
 │   ├── FlatteningService.cs

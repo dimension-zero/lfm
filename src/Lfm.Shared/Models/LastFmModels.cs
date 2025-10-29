@@ -304,7 +304,7 @@ public class RecentTracksAttributes
 }
 
 // Helper classes for date range aggregation
-internal class ArtistAggregation
+public class ArtistAggregation
 {
     public string Name { get; set; } = string.Empty;
     public int PlayCount { get; set; }
@@ -312,7 +312,7 @@ internal class ArtistAggregation
     public string Mbid { get; set; } = string.Empty;
 }
 
-internal class TrackAggregation
+public class TrackAggregation
 {
     public string Name { get; set; } = string.Empty;
     public int PlayCount { get; set; }
@@ -321,7 +321,7 @@ internal class TrackAggregation
     public ArtistInfo Artist { get; set; } = new();
 }
 
-internal class AlbumAggregation
+public class AlbumAggregation
 {
     public string Name { get; set; } = string.Empty;
     public int PlayCount { get; set; }

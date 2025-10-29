@@ -1,6 +1,8 @@
+using Lfm.Data.Direct;
+using Lfm.Shared.Interfaces;
 using Lfm.Core.Services;
-using Lfm.EfModels;
-using Lfm.EfModels.Extensions;
+using Lfm.Data.EF;
+using Lfm.Data.EF.Extensions;
 using Lfm.Shared.Configuration;
 using Lfm.Shared.Models;
 using Microsoft.EntityFrameworkCore;
