@@ -27,6 +27,7 @@
     <ProjectReference Include="..\Lfm.Data.Direct\Lfm.Data.Direct.csproj" />
     <ProjectReference Include="..\Lfm.McpServer\Lfm.McpServer.csproj" />
     <ProjectReference Include="..\Lfm.Data.EF\Lfm.Data.EF.csproj" />
+    <ProjectReference Include="..\Lfm.Configurator\Lfm.Configurator.csproj" />
   </ItemGroup>
 
 </Project>
