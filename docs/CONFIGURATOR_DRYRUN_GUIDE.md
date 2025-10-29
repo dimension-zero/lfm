@@ -406,6 +406,77 @@ public void ConfigurationChanges()
 
 **Solution**: Ensure DryRun mode is enabled (`dryRun: true`). Check that configuration changes are actual modifications (not setting to same value). Verify that changes pass validation checks.
 
+## Known Limitations
+
+⚠️ **Important**: DryRun mode is feature-complete but has the following limitations:
+
+### 1. Interactive Behavior Not Fully Tested
+- Unit tests use direct API calls to GetCurrentConfig() and SetState()
+- Actual AnsiConsole.Ask() behavior in dry-run mode is **untested**
+- Menu navigation with real user input has **not been validated**
+- **Mitigation**: Manual interactive testing should be performed before production use
+
+### 2. Error Handling Incomplete
+- Only happy-path scenarios tested (valid inputs, successful changes)
+- Error conditions **not tested**:
+  - Invalid numeric inputs (negative throttle, etc.)
+  - Null or empty configuration values
+  - Configuration state corruption
+  - AnsiConsole.Ask() failures
+- **Mitigation**: Add error scenario tests before production
+
+### 3. Console Output Behavior Not Verified
+- AnsiConsole.Clear() suppression in dry-run mode is **not verified by tests**
+- DryRun warning display is **assumed but not tested**
+- Menu rendering suppression needs confirmation
+- **Mitigation**: Manual testing to confirm console behavior
+
+### 4. Change Logging Coverage Gaps
+- Logging added for "Back" selections and no-change scenarios (recent fix)
+- But still missing:
+  - Invalid input scenarios
+  - User cancellations
+  - AnsiConsole interaction failures
+- **Mitigation**: Logging will improve with error scenario handling
+
+### 5. Concurrent Access Safety Untested
+- Thread-safety of DryRunLog and configuration state **not tested**
+- No race condition testing
+- No parallel access verification
+- **Mitigation**: Add concurrency tests if multi-threaded use planned
+
+### 6. Performance Characteristics Unknown
+- No benchmarking of dry-run overhead
+- Memory usage of DryRunLog with large operation counts **unknown**
+- **Mitigation**: Monitor in production, add optimization if needed
+
+### 7. Spectre.Console Behavior Assumptions
+- Tests assume AnsiConsole.Ask() works in test environment
+- Actual behavior with non-interactive input **not validated**
+- SelectionPrompt behavior in dry-run may differ from expectations
+- **Mitigation**: Interactive testing will reveal issues
+
+## Readiness Assessment
+
+**Current Status**: ⚠️ **BETA - FEATURE COMPLETE**
+
+| Criterion | Status | Notes |
+|-----------|--------|-------|
+| Code Quality | ✅ | Builds clean, no errors |
+| Unit Tests | ✅ | 14/14 passing (happy-path) |
+| Integration Tests | ❌ | Not yet performed |
+| Interactive Testing | ❌ | Not yet performed |
+| Error Handling | ⚠️ | Only happy-path tested |
+| Documentation | ⚠️ | Updated with limitations |
+| Production Ready | ❌ | Requires testing above |
+
+**Before Production Use:**
+1. [ ] Perform manual interactive testing
+2. [ ] Verify console output behavior
+3. [ ] Test error scenarios
+4. [ ] Validate with real configuration files
+5. [ ] Performance monitoring
+
 ## Future Enhancements
 
 Potential improvements for DryRun mode:
@@ -424,6 +495,8 @@ Potential improvements for DryRun mode:
 
 ---
 
-**Status**: ✅ Production Ready - 14/14 Tests Passing
-**Last Updated**: 2025-10-29
-**Version**: 1.0.0
+**Status**: ⚠️ BETA - Feature Complete, Unit Tests Passing (14/14), Integration Testing Required
+**Last Updated**: 2025-10-29 (Remediation Phase)
+**Version**: 0.9.0 (Pre-release)
+
+**BREAKING CHANGE FROM EARLIER CLAIM**: This documentation previously claimed "Production Ready" status. This has been corrected. Current status is Beta/Feature-Complete pending integration and interactive testing.
