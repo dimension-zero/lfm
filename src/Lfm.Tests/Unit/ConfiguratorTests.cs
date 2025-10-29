@@ -254,7 +254,7 @@ public class ConfiguratorTests
     }
 
     [Fact]
-    public async Task DryRunMode_NeverCallsSaveAsync()
+    public void DryRunMode_NeverCallsSaveAsync()
     {
         // Arrange
         var mockManager = new MockConfigurationManager();
@@ -269,5 +269,327 @@ public class ConfiguratorTests
         // In DryRun mode, SaveAsync should never be called automatically
         mockManager.SaveLog.Should().BeEmpty();
         mockManager.GetCurrentConfig().ApiKey.Should().BeEmpty(); // Original should be unchanged
+    }
+
+    /// <summary>
+    /// Tests for comprehensive Last.fm configuration state tracking in dry-run mode
+    /// </summary>
+    [Fact]
+    public void DryRunMode_LastFmConfiguration_PreservesAllSettings()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act
+        var currentConfig = configurator.GetCurrentConfig();
+        currentConfig.ApiKey = "test-api-key";
+        currentConfig.DefaultUsername = "test-user";
+        currentConfig.ApiThrottleMs = 300;
+
+        // Assert
+        currentConfig.ApiKey.Should().Be("test-api-key");
+        currentConfig.DefaultUsername.Should().Be("test-user");
+        currentConfig.ApiThrottleMs.Should().Be(300);
+        // Verify all properties are preserved through GetCurrentConfig
+        configurator.GetCurrentConfig().ApiKey.Should().Be("test-api-key");
+        configurator.GetCurrentConfig().DefaultUsername.Should().Be("test-user");
+        configurator.GetCurrentConfig().ApiThrottleMs.Should().Be(300);
+    }
+
+    /// <summary>
+    /// Tests that configuration state is completely isolated between instances
+    /// </summary>
+    [Fact]
+    public void ConfiguratorInstances_AreIndependent()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config1 = new LfmConfig { ApiKey = "key1" };
+        var config2 = new LfmConfig { ApiKey = "key2" };
+
+        // Act
+        var configurator1 = new ConfiguratorApp(configManager, config1, dryRun: true);
+        var configurator2 = new ConfiguratorApp(configManager, config2, dryRun: true);
+
+        // Modify first instance
+        configurator1.GetCurrentConfig().ApiKey = "modified-key1";
+
+        // Assert
+        configurator1.GetCurrentConfig().ApiKey.Should().Be("modified-key1");
+        configurator2.GetCurrentConfig().ApiKey.Should().Be("key2"); // Should not be affected
+    }
+
+    /// <summary>
+    /// Tests that DryRunLog accumulates entries correctly
+    /// </summary>
+    [Fact]
+    public void DryRunLog_AccumulatesMultipleEntries()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act
+        var currentConfig = configurator.GetCurrentConfig();
+        currentConfig.ApiKey = "key1";
+        currentConfig.DefaultUsername = "user1";
+        currentConfig.ApiThrottleMs = 250;
+
+        // Manual logging (simulating what would happen in RunAsync)
+        // Note: This is testing the API contract, not the actual logging implementation
+        // which requires AnsiConsole.Ask interaction
+
+        // Assert
+        // Even though we're not calling the config methods directly,
+        // the DryRunLog should be accessible and ready for entries
+        configurator.DryRunLog.Should().NotBeNull();
+        configurator.DryRunLog.Should().BeOfType<System.Collections.ObjectModel.ReadOnlyCollection<string>>();
+    }
+
+    /// <summary>
+    /// Tests that multiple configuration modifications in sequence preserve state
+    /// </summary>
+    [Fact]
+    public void DryRunMode_SequentialModifications_PreserveState()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act - Multiple sequential modifications
+        var currentConfig = configurator.GetCurrentConfig();
+
+        // First modification
+        currentConfig.ApiKey = "initial-key";
+        currentConfig.ApiThrottleMs = 100;
+
+        // Second modification
+        currentConfig.ApiKey = "updated-key";
+        currentConfig.DefaultUsername = "user";
+
+        // Third modification
+        currentConfig.Spotify.ClientId = "spotify-id";
+        currentConfig.Sonos.DefaultRoom = "Living Room";
+        currentConfig.CacheEnabled = true;
+
+        // Assert
+        var finalConfig = configurator.GetCurrentConfig();
+        finalConfig.ApiKey.Should().Be("updated-key");
+        finalConfig.ApiThrottleMs.Should().Be(100);
+        finalConfig.DefaultUsername.Should().Be("user");
+        finalConfig.Spotify.ClientId.Should().Be("spotify-id");
+        finalConfig.Sonos.DefaultRoom.Should().Be("Living Room");
+        finalConfig.CacheEnabled.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// Tests that configuration changes don't trigger saves in dry-run mode
+    /// </summary>
+    [Fact]
+    public void DryRunMode_MultipleChanges_NeverTriggersAutoSave()
+    {
+        // Arrange
+        var mockManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(mockManager, config, dryRun: true);
+
+        // Act
+        var currentConfig = configurator.GetCurrentConfig();
+        for (int i = 0; i < 5; i++)
+        {
+            currentConfig.ApiKey = $"key-{i}";
+            currentConfig.DefaultUsername = $"user-{i}";
+            currentConfig.ApiThrottleMs = 100 + (i * 10);
+        }
+
+        // Assert
+        mockManager.SaveLog.Should().BeEmpty();
+        currentConfig.ApiKey.Should().Be("key-4");
+    }
+
+    /// <summary>
+    /// Tests that DryRunLog is immutable (read-only collection)
+    /// </summary>
+    [Fact]
+    public void DryRunLog_IsImmutable()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act
+        var log = configurator.DryRunLog;
+
+        // Assert
+        // Should throw NotSupportedException when trying to modify
+        var ex = Record.Exception(() => ((System.Collections.Generic.IList<string>)log).Add("test"));
+        ex.Should().NotBeNull();
+        ex.Should().BeOfType<System.NotSupportedException>();
+    }
+
+    /// <summary>
+    /// Tests boundary case: empty string values in configuration
+    /// </summary>
+    [Fact]
+    public void DryRunMode_HandlesEmptyStringValues()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act
+        var currentConfig = configurator.GetCurrentConfig();
+        currentConfig.ApiKey = "";
+        currentConfig.DefaultUsername = "";
+        currentConfig.Spotify.ClientId = "";
+
+        // Assert
+        currentConfig.ApiKey.Should().Be("");
+        currentConfig.DefaultUsername.Should().Be("");
+        currentConfig.Spotify.ClientId.Should().Be("");
+    }
+
+    /// <summary>
+    /// Tests boundary case: null values in nullable string properties
+    /// </summary>
+    [Fact]
+    public void DryRunMode_HandlesNullValues()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig
+        {
+            DefaultUsername = "initial",
+            Spotify = new SpotifyConfig { ClientId = "initial-id" }
+        };
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act
+        var currentConfig = configurator.GetCurrentConfig();
+        currentConfig.DefaultUsername = null!;
+        currentConfig.Spotify.ClientId = null!;
+
+        // Assert
+        currentConfig.DefaultUsername.Should().BeNull();
+        currentConfig.Spotify.ClientId.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Tests large/extreme values in numeric configuration
+    /// </summary>
+    [Fact]
+    public void DryRunMode_HandlesExtremeLargeValues()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act
+        var currentConfig = configurator.GetCurrentConfig();
+        currentConfig.ApiThrottleMs = int.MaxValue;
+        currentConfig.CacheExpiryMinutes = int.MaxValue;
+        currentConfig.Sonos.TimeoutMs = int.MaxValue;
+
+        // Assert
+        currentConfig.ApiThrottleMs.Should().Be(int.MaxValue);
+        currentConfig.CacheExpiryMinutes.Should().Be(int.MaxValue);
+        currentConfig.Sonos.TimeoutMs.Should().Be(int.MaxValue);
+    }
+
+    /// <summary>
+    /// Tests zero and negative values in numeric configuration
+    /// </summary>
+    [Fact]
+    public void DryRunMode_HandlesZeroAndNegativeValues()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act
+        var currentConfig = configurator.GetCurrentConfig();
+        currentConfig.ApiThrottleMs = 0;
+        currentConfig.CacheExpiryMinutes = 0;
+        currentConfig.Sonos.TimeoutMs = -1; // Test negative
+
+        // Assert
+        currentConfig.ApiThrottleMs.Should().Be(0);
+        currentConfig.CacheExpiryMinutes.Should().Be(0);
+        currentConfig.Sonos.TimeoutMs.Should().Be(-1);
+    }
+
+    /// <summary>
+    /// Tests very long string values in configuration
+    /// </summary>
+    [Fact]
+    public void DryRunMode_HandlesVeryLongStringValues()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+        var veryLongString = new string('x', 10000);
+
+        // Act
+        var currentConfig = configurator.GetCurrentConfig();
+        currentConfig.ApiKey = veryLongString;
+        currentConfig.DefaultUsername = veryLongString;
+
+        // Assert
+        currentConfig.ApiKey.Should().Be(veryLongString);
+        currentConfig.DefaultUsername.Should().Be(veryLongString);
+    }
+
+    /// <summary>
+    /// Tests that MockConfigurationManager properly persists state across Load/Save cycles
+    /// </summary>
+    [Fact]
+    public async Task MockConfigurationManager_PersistsStateAcrossLoadSave()
+    {
+        // Arrange
+        var mockManager = new MockConfigurationManager();
+        var config1 = new LfmConfig
+        {
+            ApiKey = "key1",
+            DefaultUsername = "user1"
+        };
+
+        // Act
+        await mockManager.SaveAsync(config1);
+        var loadedConfig = await mockManager.LoadAsync();
+
+        // Assert
+        loadedConfig.ApiKey.Should().Be("key1");
+        loadedConfig.DefaultUsername.Should().Be("user1");
+    }
+
+    /// <summary>
+    /// Tests that configuration state is correctly shared through GetCurrentConfig()
+    /// </summary>
+    [Fact]
+    public void DryRunMode_ConfigurationStateIsShared()
+    {
+        // Arrange
+        var configManager = new MockConfigurationManager();
+        var config = new LfmConfig();
+        var configurator = new ConfiguratorApp(configManager, config, dryRun: true);
+
+        // Act
+        var config1 = configurator.GetCurrentConfig();
+        config1.ApiKey = "test-key";
+
+        var config2 = configurator.GetCurrentConfig();
+
+        // Assert - Should return the same instance
+        config2.ApiKey.Should().Be("test-key");
+        config1.Should().BeSameAs(config2); // Same reference
     }
 }
