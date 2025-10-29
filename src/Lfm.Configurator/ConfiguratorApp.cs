@@ -69,6 +69,12 @@ public class ConfiguratorApp
 
             var choice = options[selectedOption];
 
+            // Log menu selection in dry-run mode
+            if (_dryRun)
+            {
+                _dryRunLog.Add($"User selected: {selectedOption}");
+            }
+
             switch (choice)
             {
                 case 1:
@@ -87,6 +93,10 @@ public class ConfiguratorApp
                     DisplayConfiguration();
                     break;
                 case 6:
+                    if (_dryRun)
+                    {
+                        _dryRunLog.Add("User selected: Exit");
+                    }
                     running = false;
                     break;
             }
@@ -117,6 +127,12 @@ public class ConfiguratorApp
 
     private void DisplayMenu()
     {
+        // Skip rendering in dry-run mode to prevent console artifacts in tests
+        if (_dryRun)
+        {
+            return;
+        }
+
         var panel = new Panel("[cyan]Lfm Configuration Utility[/]")
         {
             Border = BoxBorder.Rounded,
@@ -151,6 +167,10 @@ public class ConfiguratorApp
                     _dryRunLog.Add($"Last.fm API Key changed from '{MaskValue(oldApiKey)}' to '{MaskValue(_config.ApiKey)}'");
                     _modified = true;
                 }
+                else if (_dryRun && string.IsNullOrEmpty(_config.ApiKey) || _config.ApiKey == oldApiKey)
+                {
+                    _dryRunLog.Add("Last.fm API Key: no change");
+                }
                 break;
             case "Default Username":
                 var oldUsername = _config.DefaultUsername;
@@ -159,6 +179,10 @@ public class ConfiguratorApp
                 {
                     _dryRunLog.Add($"Last.fm Default Username changed from '{oldUsername}' to '{_config.DefaultUsername}'");
                     _modified = true;
+                }
+                else if (_dryRun && string.IsNullOrEmpty(_config.DefaultUsername) || _config.DefaultUsername == oldUsername)
+                {
+                    _dryRunLog.Add("Last.fm Default Username: no change");
                 }
                 break;
             case "API Throttle (ms)":
@@ -169,6 +193,16 @@ public class ConfiguratorApp
                     _dryRunLog.Add($"Last.fm API Throttle changed from {oldThrottle}ms to {throttle}ms");
                     _config.ApiThrottleMs = throttle;
                     _modified = true;
+                }
+                else if (_dryRun && (throttle <= 0 || throttle == oldThrottle))
+                {
+                    _dryRunLog.Add("Last.fm API Throttle: no change");
+                }
+                break;
+            case "Back":
+                if (_dryRun)
+                {
+                    _dryRunLog.Add("User selected: Back (from Last.fm Settings)");
                 }
                 break;
         }
@@ -200,6 +234,10 @@ public class ConfiguratorApp
                     _dryRunLog.Add($"Spotify Client ID changed from '{MaskValue(oldClientId)}' to '{MaskValue(_config.Spotify.ClientId)}'");
                     _modified = true;
                 }
+                else if (_dryRun && (string.IsNullOrEmpty(_config.Spotify.ClientId) || _config.Spotify.ClientId == oldClientId))
+                {
+                    _dryRunLog.Add("Spotify Client ID: no change");
+                }
                 break;
             case "Client Secret":
                 var oldSecret = _config.Spotify.ClientSecret;
@@ -209,6 +247,10 @@ public class ConfiguratorApp
                     _dryRunLog.Add($"Spotify Client Secret changed from '{MaskValue(oldSecret)}' to '{MaskValue(_config.Spotify.ClientSecret)}'");
                     _modified = true;
                 }
+                else if (_dryRun && (string.IsNullOrEmpty(_config.Spotify.ClientSecret) || _config.Spotify.ClientSecret == oldSecret))
+                {
+                    _dryRunLog.Add("Spotify Client Secret: no change");
+                }
                 break;
             case "Default Device":
                 var oldDevice = _config.Spotify.DefaultDevice;
@@ -217,6 +259,16 @@ public class ConfiguratorApp
                 {
                     _dryRunLog.Add($"Spotify Default Device changed from '{oldDevice}' to '{_config.Spotify.DefaultDevice}'");
                     _modified = true;
+                }
+                else if (_dryRun && (string.IsNullOrEmpty(_config.Spotify.DefaultDevice) || _config.Spotify.DefaultDevice == oldDevice))
+                {
+                    _dryRunLog.Add("Spotify Default Device: no change");
+                }
+                break;
+            case "Back":
+                if (_dryRun)
+                {
+                    _dryRunLog.Add("User selected: Back (from Spotify Settings)");
                 }
                 break;
         }
@@ -248,6 +300,10 @@ public class ConfiguratorApp
                     _dryRunLog.Add($"Sonos API Bridge URL changed from '{oldUrl}' to '{_config.Sonos.HttpApiBaseUrl}'");
                     _modified = true;
                 }
+                else if (_dryRun && (string.IsNullOrEmpty(_config.Sonos.HttpApiBaseUrl) || _config.Sonos.HttpApiBaseUrl == oldUrl))
+                {
+                    _dryRunLog.Add("Sonos API Bridge URL: no change");
+                }
                 break;
             case "Default Room":
                 var oldRoom = _config.Sonos.DefaultRoom;
@@ -256,6 +312,10 @@ public class ConfiguratorApp
                 {
                     _dryRunLog.Add($"Sonos Default Room changed from '{oldRoom}' to '{_config.Sonos.DefaultRoom}'");
                     _modified = true;
+                }
+                else if (_dryRun && (string.IsNullOrEmpty(_config.Sonos.DefaultRoom) || _config.Sonos.DefaultRoom == oldRoom))
+                {
+                    _dryRunLog.Add("Sonos Default Room: no change");
                 }
                 break;
             case "API Timeout (ms)":
@@ -266,6 +326,16 @@ public class ConfiguratorApp
                     _dryRunLog.Add($"Sonos API Timeout changed from {oldTimeout}ms to {timeout}ms");
                     _config.Sonos.TimeoutMs = timeout;
                     _modified = true;
+                }
+                else if (_dryRun && (timeout <= 0 || timeout == oldTimeout))
+                {
+                    _dryRunLog.Add("Sonos API Timeout: no change");
+                }
+                break;
+            case "Back":
+                if (_dryRun)
+                {
+                    _dryRunLog.Add("User selected: Back (from Sonos Settings)");
                 }
                 break;
         }
@@ -297,7 +367,10 @@ public class ConfiguratorApp
             case var s when s.StartsWith("Enable Cache"):
                 var oldCacheEnabled = _config.CacheEnabled;
                 _config.CacheEnabled = !_config.CacheEnabled;
-                _dryRunLog.Add($"Cache enabled changed from {oldCacheEnabled} to {_config.CacheEnabled}");
+                if (_dryRun)
+                {
+                    _dryRunLog.Add($"Cache enabled changed from {oldCacheEnabled} to {_config.CacheEnabled}");
+                }
                 _modified = true;
                 break;
             case var s when s.StartsWith("Cache Expiry"):
@@ -308,6 +381,16 @@ public class ConfiguratorApp
                     _dryRunLog.Add($"Cache expiry changed from {oldExpiry} minutes to {expiry} minutes");
                     _config.CacheExpiryMinutes = expiry;
                     _modified = true;
+                }
+                else if (_dryRun && (expiry <= 0 || expiry == oldExpiry))
+                {
+                    _dryRunLog.Add("Cache expiry: no change");
+                }
+                break;
+            case "Back":
+                if (_dryRun)
+                {
+                    _dryRunLog.Add("User selected: Back (from Cache Settings)");
                 }
                 break;
         }
