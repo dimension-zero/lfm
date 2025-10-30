@@ -1,3 +1,5 @@
+#Requires -Version 7.0
+
 param(
     [string]$Path = "src",
     [ValidateSet("Table", "List", "CSV", "JSON")]

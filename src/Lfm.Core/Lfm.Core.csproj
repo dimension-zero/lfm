@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Lfm.Shared\Lfm.Shared.csproj" />
-    <ProjectReference Include="..\Lfm.Sonos\Lfm.Sonos.csproj" />
+    <ProjectReference Include="..\Lfm.Integration.Sonos\Lfm.Integration.Sonos.csproj" />
   </ItemGroup>
 
 </Project>

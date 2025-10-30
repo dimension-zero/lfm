@@ -6,7 +6,7 @@ using Lfm.Shared.Configuration;
 using FluentAssertions;
 using Lfm.Shared.Models;
 using Lfm.Shared.Models.Results;
-using Lfm.McpServer.Services;
+using Lfm.Interface.Mcp.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 

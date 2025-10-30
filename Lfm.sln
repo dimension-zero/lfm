@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Cli", "src\Lfm.Cli\Lfm.Cli.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Interface.Cli", "src\Lfm.Interface.Cli\Lfm.Interface.Cli.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Core", "src\Lfm.Core\Lfm.Core.csproj", "{091C3FA6-24E3-E9BA-18EA-2969F3424418}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{827E0CD3-B72D-47B6-A68D-7590B98EB39B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Spotify", "src\Lfm.Spotify\Lfm.Spotify.csproj", "{201BE8B7-302E-4BCD-84E6-D7FFB8552DA4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Integration.Spotify", "src\Lfm.Integration.Spotify\Lfm.Integration.Spotify.csproj", "{201BE8B7-302E-4BCD-84E6-D7FFB8552DA4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Schema", "src\Lfm.Schema\Lfm.Schema.csproj", "{F62AAEB6-56E7-4793-B22A-ECFBC45E031B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.McpServer", "src\Lfm.McpServer\Lfm.McpServer.csproj", "{F885E604-C6DD-4A2A-91E0-729DE6CA018F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Interface.Mcp", "src\Lfm.Interface.Mcp\Lfm.Interface.Mcp.csproj", "{F885E604-C6DD-4A2A-91E0-729DE6CA018F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Tests", "src\Lfm.Tests\Lfm.Tests.csproj", "{23A69A6C-666D-4F82-A08B-9F747C31D832}"
 EndProject
@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Data.Direct", "src\Lfm.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Shared", "src\Lfm.Shared\Lfm.Shared.csproj", "{4DE554EC-6B52-474C-B63B-9F5A8FE36D9A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Sonos", "src\Lfm.Sonos\Lfm.Sonos.csproj", "{1F75497A-F8D4-4EC4-AB60-646D6073690C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Integration.Sonos", "src\Lfm.Integration.Sonos\Lfm.Integration.Sonos.csproj", "{1F75497A-F8D4-4EC4-AB60-646D6073690C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lfm.Configurator", "src\Lfm.Configurator\Lfm.Configurator.csproj", "{5E82D919-6B4F-4A2D-9B7C-8E5F6D9C1A2B}"
 EndProject

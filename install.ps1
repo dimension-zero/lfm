@@ -1,3 +1,5 @@
+#Requires -Version 7.0
+
 # LFM Installation Script for Windows
 # Usage: iwr -useb https://raw.githubusercontent.com/Steven-Marshall/lfm/master/install.ps1 | iex
 

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Lfm.Interface.Cli</RootNamespace>
+    <AssemblyName>lfm</AssemblyName>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>false</SelfContained>
+    <Version>1.5.1</Version>
+    <Authors>Steven Marshall</Authors>
+    <Description>Last.fm CLI tool with caching, tag filtering, and Unicode support</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageReference Include="Spectre.Console" Version="0.50.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lfm.Shared\Lfm.Shared.csproj" />
+    <ProjectReference Include="..\Lfm.Core\Lfm.Core.csproj" />
+    <ProjectReference Include="..\Lfm.Data.Direct\Lfm.Data.Direct.csproj" />
+    <ProjectReference Include="..\Lfm.Integration.Spotify\Lfm.Integration.Spotify.csproj" />
+  </ItemGroup>
+
+</Project>

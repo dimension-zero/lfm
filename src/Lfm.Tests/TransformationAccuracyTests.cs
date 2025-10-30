@@ -3,7 +3,7 @@ using Lfm.Core.Configuration;
 using Lfm.Data.Direct;
 using Lfm.Shared.Services;
 using Lfm.Shared.Configuration;
-using Lfm.McpServer.Services;
+using Lfm.Interface.Mcp.Services;
 using Lfm.Tests.Mocks;
 using Microsoft.Extensions.Logging.Abstractions;
 

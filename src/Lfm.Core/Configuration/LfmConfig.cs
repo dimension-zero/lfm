@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Lfm.Shared.Models.Results;
-using Lfm.Sonos.Models;
+using Lfm.Integration.Sonos.Models;
 
 namespace Lfm.Core.Configuration;
 

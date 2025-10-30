@@ -1,0 +1,85 @@
+using System.CommandLine;
+using Lfm.Interface.Cli.Commands;
+using Lfm.Shared.Models;
+using Microsoft.Extensions.DependencyInjection;
+using static Lfm.Shared.Configuration.SearchConstants;
+
+namespace Lfm.Interface.Cli.CommandBuilders;
+
+public static class ArtistTracksCommandBuilder
+{
+    public static Command Build(IServiceProvider services)
+    {
+        var limitOption = StandardCommandOptions.CreateLimitOption("tracks");
+        
+        var deepOption = new Option<bool>("--deep", "Search through ALL your tracks (slower but comprehensive)");
+        
+        var delayOption = new Option<int?>("--delay", "Delay between API requests in milliseconds (0 = no throttling, overrides config)");
+        delayOption.AddAlias("-d");
+        
+        var depthOption = new Option<int?>("--depth", "Maximum number of items to search through (0 = unlimited, overrides --deep and config)");
+        
+        var timeoutOption = new Option<int?>("--timeout", "Search timeout in seconds (0 = no timeout, overrides config)");
+        timeoutOption.AddAlias("-t");
+        
+        var verboseOption = StandardCommandOptions.CreateVerboseOption();
+        
+        var timingOption = new Option<bool>("--timing", "Show detailed API timing information (cache hits/misses and response times)");
+        
+        var forceCacheOption = new Option<bool>("--force-cache", "Use cached data regardless of expiry time");
+        forceCacheOption.AddAlias("-fc");
+
+        var forceApiOption = new Option<bool>("--force-api", "Always call API and cache result, ignore existing cache");
+        forceApiOption.AddAlias("-fa");
+
+        var noCacheOption = new Option<bool>("--no-cache", "Disable caching entirely for this request");
+        noCacheOption.AddAlias("-nc");
+
+        var timerOption = StandardCommandOptions.CreateTimerOption();
+
+        var jsonOption = new Option<bool>(
+            aliases: new[] { "--json", "-j" },
+            description: "Output in JSON format (for MCP integration)");
+
+        var artistArg = new Argument<string>("artist", "Artist name");
+
+        var command = new Command("artist-tracks", "Get your most played tracks by a specific artist from your listening history")
+        {
+            artistArg,
+            limitOption,
+            deepOption,
+            delayOption,
+            depthOption,
+            timeoutOption,
+            verboseOption,
+            timingOption,
+            forceCacheOption,
+            forceApiOption,
+            noCacheOption,
+            timerOption,
+            jsonOption
+        };
+
+        command.SetHandler(async (context) =>
+        {
+            var artist = context.ParseResult.GetValueForArgument(artistArg);
+            var limit = context.ParseResult.GetValueForOption(limitOption);
+            var deep = context.ParseResult.GetValueForOption(deepOption);
+            var delay = context.ParseResult.GetValueForOption(delayOption);
+            var depth = context.ParseResult.GetValueForOption(depthOption);
+            var timeout = context.ParseResult.GetValueForOption(timeoutOption);
+            var verbose = context.ParseResult.GetValueForOption(verboseOption);
+            var timing = context.ParseResult.GetValueForOption(timingOption);
+            var forceCache = context.ParseResult.GetValueForOption(forceCacheOption);
+            var forceApi = context.ParseResult.GetValueForOption(forceApiOption);
+            var noCache = context.ParseResult.GetValueForOption(noCacheOption);
+            var timer = context.ParseResult.GetValueForOption(timerOption);
+            var json = context.ParseResult.GetValueForOption(jsonOption);
+
+            var artistTracksCommand = services.GetRequiredService<ArtistSearchCommand<Track, TopTracks>>();
+            await artistTracksCommand.ExecuteAsync(artist, limit, deep, delay, depth, timeout, verbose, timing, forceCache, forceApi, noCache, timer, json);
+        });
+
+        return command;
+    }
+}
