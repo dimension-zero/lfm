@@ -128,4 +128,139 @@ public class SymbolProviderTests
         provider.Error.Should().Contain("]");
         provider.Success.Should().Contain("]");
     }
+
+    // ========== Extended Unicode Symbol Tests ==========
+
+    [Fact]
+    public void SymbolProvider_Stats_ReturnsCorrectSymbol()
+    {
+        // Arrange
+        var mockConfigManager = new Mock<IConfigurationManager>();
+        var unicodeConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Enabled };
+        var asciiConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Disabled };
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(unicodeConfig);
+        var unicodeProvider = new SymbolProvider(mockConfigManager.Object);
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(asciiConfig);
+        var asciiProvider = new SymbolProvider(mockConfigManager.Object);
+
+        // Assert
+        unicodeProvider.Stats.Should().Be("📊");
+        asciiProvider.Stats.Should().Be("[STATS]");
+    }
+
+    [Fact]
+    public void SymbolProvider_Settings_ReturnsCorrectSymbol()
+    {
+        // Arrange
+        var mockConfigManager = new Mock<IConfigurationManager>();
+        var unicodeConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Enabled };
+        var asciiConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Disabled };
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(unicodeConfig);
+        var unicodeProvider = new SymbolProvider(mockConfigManager.Object);
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(asciiConfig);
+        var asciiProvider = new SymbolProvider(mockConfigManager.Object);
+
+        // Assert
+        unicodeProvider.Settings.Should().Be("⚙️");
+        asciiProvider.Settings.Should().Be("[SETTINGS]");
+    }
+
+    [Fact]
+    public void SymbolProvider_Cleanup_ReturnsCorrectSymbol()
+    {
+        // Arrange
+        var mockConfigManager = new Mock<IConfigurationManager>();
+        var unicodeConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Enabled };
+        var asciiConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Disabled };
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(unicodeConfig);
+        var unicodeProvider = new SymbolProvider(mockConfigManager.Object);
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(asciiConfig);
+        var asciiProvider = new SymbolProvider(mockConfigManager.Object);
+
+        // Assert
+        unicodeProvider.Cleanup.Should().Be("🧹");
+        asciiProvider.Cleanup.Should().Be("[CLEANUP]");
+    }
+
+    [Fact]
+    public void SymbolProvider_Clipboard_ReturnsCorrectSymbol()
+    {
+        // Arrange
+        var mockConfigManager = new Mock<IConfigurationManager>();
+        var unicodeConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Enabled };
+        var asciiConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Disabled };
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(unicodeConfig);
+        var unicodeProvider = new SymbolProvider(mockConfigManager.Object);
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(asciiConfig);
+        var asciiProvider = new SymbolProvider(mockConfigManager.Object);
+
+        // Assert
+        unicodeProvider.Clipboard.Should().Be("📋");
+        asciiProvider.Clipboard.Should().Be("[LIST]");
+    }
+
+    [Fact]
+    public void SymbolProvider_StopSign_ReturnsCorrectSymbol()
+    {
+        // Arrange
+        var mockConfigManager = new Mock<IConfigurationManager>();
+        var unicodeConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Enabled };
+        var asciiConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Disabled };
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(unicodeConfig);
+        var unicodeProvider = new SymbolProvider(mockConfigManager.Object);
+
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(asciiConfig);
+        var asciiProvider = new SymbolProvider(mockConfigManager.Object);
+
+        // Assert
+        unicodeProvider.StopSign.Should().Be("🛑");
+        asciiProvider.StopSign.Should().Be("[STOP]");
+    }
+
+    // ========== Auto-Detection Tests ==========
+
+    [Fact]
+    public void SymbolProvider_WithAutoDetection_SelectsBasedOnPlatform()
+    {
+        // Arrange
+        var mockConfigManager = new Mock<IConfigurationManager>();
+        var autoConfig = new LfmConfig { UnicodeSymbols = UnicodeSupport.Auto };
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(autoConfig);
+
+        // Act
+        var provider = new SymbolProvider(mockConfigManager.Object);
+
+        // Assert - Should return a valid symbol (either emoji or ASCII format)
+        provider.Error.Should().NotBeNullOrEmpty();
+        // On Linux/macOS: should be emoji; on Windows: depends on terminal
+        (provider.Error == "❌" || provider.Error == "[X]").Should().BeTrue();
+    }
+
+    [Fact]
+    public void SymbolProvider_SymbolsAreConsistent_AcrossMultipleCalls()
+    {
+        // Arrange
+        var mockConfigManager = new Mock<IConfigurationManager>();
+        var config = new LfmConfig { UnicodeSymbols = UnicodeSupport.Enabled };
+        mockConfigManager.Setup(m => m.LoadAsync()).ReturnsAsync(config);
+        var provider = new SymbolProvider(mockConfigManager.Object);
+
+        // Act
+        var error1 = provider.Error;
+        var error2 = provider.Error;
+        var error3 = provider.Error;
+
+        // Assert
+        error1.Should().Be(error2);
+        error2.Should().Be(error3);
+    }
 }
