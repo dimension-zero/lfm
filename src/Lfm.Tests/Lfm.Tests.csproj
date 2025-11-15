@@ -29,6 +29,8 @@
     <ProjectReference Include="..\Lfm.Interface.Mcp\Lfm.Interface.Mcp.csproj" />
     <ProjectReference Include="..\Lfm.Data.EF\Lfm.Data.EF.csproj" />
     <ProjectReference Include="..\Lfm.Configurator\Lfm.Configurator.csproj" />
+    <ProjectReference Include="..\Lfm.Framework\Lfm.Framework.csproj" />
+    <ProjectReference Include="..\Lfm.Wine\Lfm.Wine.csproj" />
   </ItemGroup>
 
 </Project>
