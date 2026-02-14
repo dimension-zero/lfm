@@ -1,0 +1,16 @@
+{
+  "project": {
+    "name": "lfm"
+  },
+  "build": {
+    "solution": "Lfm.sln",
+    "languages": {
+      "csharp": {
+        "enabled": true
+      },
+      "javascript": {
+        "enabled": true
+      }
+    }
+  }
+}
